@@ -60,9 +60,9 @@
   width: 260px;
   max-width: calc(100vw - 56px);
   background:
-    radial-gradient(ellipse at 20% 0%, rgba(124,58,237,0.08), transparent 60%),
-    radial-gradient(ellipse at 80% 100%, rgba(59,130,246,0.06), transparent 60%),
-    var(--void-deep);
+    radial-gradient(ellipse at 20% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%),
+    radial-gradient(ellipse at 80% 100%, color-mix(in srgb, var(--info) 6%, transparent), transparent 60%),
+    color-mix(in srgb, var(--void-deep) 85%, transparent);
   border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
@@ -107,10 +107,10 @@
 }
 
 .nav-group-label {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
   padding: var(--space-md) var(--space-sm) var(--space-xs);
 }
@@ -118,14 +118,14 @@
 .nav-item {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: 10px 12px;
+  gap: 12px;
+  padding: 10px 14px;
   min-height: 40px;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.84rem;
-  font-weight: 450;
+  font-size: 0.9rem;
+  font-weight: 500;
   transition: all 0.2s;
   cursor: pointer;
   background: none;
@@ -141,7 +141,7 @@
 .nav-item svg { flex-shrink: 0; }
 .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); }
 .nav-item:active { background: rgba(255,255,255,0.06); }
-.nav-item.active { background: rgba(124,58,237,0.08); color: var(--text-primary); font-weight: 550; }
+.nav-item.active { background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--text-primary); font-weight: 550; }
 .nav-item.active::before {
   content: '';
   position: absolute;
@@ -764,15 +764,13 @@ body.is-offline .offline-banner { display: flex; }
   .mobile-header { display: none; }
   .sidebar {
     transform: translateX(0);
-    width: 220px;
-    background-size: 200% 200%;
-    animation: meshDrift 25s ease-in-out infinite;
+    width: 260px;
     backdrop-filter: blur(32px) saturate(1.2);
     -webkit-backdrop-filter: blur(32px) saturate(1.2);
   }
   .app-main {
-    margin-left: 220px;
-    width: calc(100% - 220px);
+    margin-left: 260px;
+    width: calc(100% - 260px);
     padding: var(--space-xl);
     padding-bottom: var(--space-xl);
   }
