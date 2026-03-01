@@ -48,9 +48,9 @@
 }
 
 /* ── Desktop-only helper ── */
-.desktop-only { display: none; }
+.desktop-only { display: none !important; }
 @media (min-width: 1024px) {
-  .desktop-only { display: flex; }
+  .desktop-only { display: flex !important; }
 }
 
 /* ── Sidebar (hidden by default on mobile) ── */
