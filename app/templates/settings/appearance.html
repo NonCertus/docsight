@@ -49,7 +49,7 @@
                      data-theme-dark='{{ mod.theme_data.get("dark", {})|tojson }}'
                      data-theme-light='{{ mod.theme_data.get("light", {})|tojson }}'>
                     <div class="theme-palette">
-                        {% set colors = mod.theme_data.get('dark', {}) %}
+                        {% set colors = mod.theme_data.get(theme, mod.theme_data.get('dark', {})) %}
                         <span class="palette-dot" style="background: {{ colors.get('--bg', '#111') }}"></span>
                         <span class="palette-dot" style="background: {{ colors.get('--surface', '#222') }}"></span>
                         <span class="palette-dot" style="background: {{ colors.get('--accent', '#7c3aed') }}"></span>

@@ -190,6 +190,18 @@ function toggleThemeFromAppearance(checked) {
     var theme = checked ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('docsis-theme', theme);
+    updatePaletteDots(theme);
+}
+
+function updatePaletteDots(mode) {
+    var keys = ['--bg', '--surface', '--accent', '--good', '--crit'];
+    document.querySelectorAll('.theme-card').forEach(function(card) {
+        var colors = JSON.parse(card.getAttribute('data-theme-' + mode) || '{}');
+        var dots = card.querySelectorAll('.palette-dot');
+        dots.forEach(function(dot, i) {
+            if (keys[i] && colors[keys[i]]) dot.style.background = colors[keys[i]];
+        });
+    });
 }
 
 /* ── ISP Change ── */
