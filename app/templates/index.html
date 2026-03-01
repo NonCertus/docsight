@@ -46,7 +46,6 @@
     </button>
     <span class="mobile-header-title">DOCSight</span>
     <div class="mobile-header-status">
-        <span id="topbar-meta">{% if last_update %}{{ last_update }}{% endif %}</span>
         <span id="topbar-countdown"></span>
         <button class="hamburger" id="refresh-btn" title="{{ t.refresh }}" style="min-width:36px;min-height:36px;padding:4px;">
             <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
@@ -198,7 +197,6 @@
 <!-- Main Area -->
 <div class="app-main">
 
-
 <!-- ═══ View: Dashboard ═══ -->
 <div class="main-content">
 <div id="view-dashboard" class="view active">
@@ -279,12 +277,10 @@
                         <i data-lucide="gamepad-2" style="width:14px;height:14px;"></i> Gaming <span class="badge {{ _badge_class }}" style="margin-left:2px;">{{ gaming_index.grade }}</span>
                     </span>
                     {% endif %}
-                </div>
-                <div class="hero-actions">
-                    <span class="last-update" id="hero-last-update">{% if last_update %}{{ last_update }}{% endif %}</span>
-                    <button class="btn btn-ghost" style="padding:8px 12px;min-height:36px;" title="{{ t.refresh }}"
+                    <span class="hero-meta-item desktop-only" id="desktop-countdown"></span>
+                    <button class="btn btn-ghost hero-meta-item desktop-only" style="padding:4px 10px;min-height:28px;font-size:0.8rem;" title="{{ t.refresh }}"
                             onclick="var rb=document.getElementById('refresh-btn');if(rb)rb.click();">
-                        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> {{ t.refresh }}
+                        <i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> {{ t.refresh }}
                     </button>
                 </div>
             </div>
@@ -2166,13 +2162,11 @@ var T = {{ t|tojson }};
     var secondsSinceUpdate = 0;
     var REFRESH_INTERVAL = 60;
     var countdownEl = document.getElementById('topbar-countdown');
+    var desktopCountdownEl = document.getElementById('desktop-countdown');
 
     function updateCountdown() {
         if (countdownEl) countdownEl.textContent = countdownSeconds + 's';
-        var heroEl = document.getElementById('hero-last-update');
-        if (heroEl) heroEl.textContent = secondsSinceUpdate + 's ago';
-        var metaEl = document.getElementById('topbar-meta');
-        if (metaEl) metaEl.textContent = secondsSinceUpdate + 's ago';
+        if (desktopCountdownEl) desktopCountdownEl.textContent = countdownSeconds + 's';
     }
 
     function startAutoRefresh() {
