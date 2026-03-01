@@ -74,7 +74,8 @@
     background: var(--card-bg, var(--card));
     border: 1px solid var(--card-border, var(--input-border));
     border-radius: var(--radius-lg, 12px);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 #speedtest-table {
     width: 100%;
