@@ -183,9 +183,6 @@
                 <a href="https://github.com/itsDNNS/docsight/issues" target="_blank" rel="noopener noreferrer" title="Report a bug">
                     <i data-lucide="bug"></i>
                 </a>
-                <a href="https://paypal.me/itsDNNS" target="_blank" rel="noopener noreferrer" title="Donate via PayPal">
-                    <i data-lucide="wallet"></i>
-                </a>
                 <a href="https://ko-fi.com/itsdnns" target="_blank" rel="noopener noreferrer" title="Support on Ko-fi">
                     <i data-lucide="coffee"></i>
                 </a>
@@ -256,6 +253,7 @@
                 </div>
                 <div>
                     <h1 class="hero-title">
+                        <span class="status-dot {{ hero_health }}"></span>
                         {{ health_label }}
                         {% if demo_mode %}<span class="badge badge-muted" style="font-size:0.68rem;">{{ t.demo_mode|default('DEMO') }}</span>{% endif %}
                     </h1>
@@ -286,7 +284,7 @@
                     <span class="last-update" id="hero-last-update">{% if last_update %}{{ last_update }}{% endif %}</span>
                     <button class="btn btn-ghost" style="padding:8px 12px;min-height:36px;" title="{{ t.refresh }}"
                             onclick="var rb=document.getElementById('refresh-btn');if(rb)rb.click();">
-                        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i>
+                        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> {{ t.refresh }}
                     </button>
                 </div>
             </div>
