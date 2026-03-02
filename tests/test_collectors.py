@@ -463,29 +463,35 @@ class TestBQMCollector:
         c, *_ = self._make_collector()
         assert c.name == "bqm"
 
+    @patch("app.modules.bqm.collector.random")
     @patch("app.modules.bqm.collector.time")
-    def test_should_poll_before_target(self, mock_time):
-        """Should not poll if current time is before configured collect_time."""
+    def test_should_poll_before_target(self, mock_time, mock_random):
+        """Should not poll if current time is before target + spread offset."""
+        mock_random.randint.return_value = 15  # 15 min offset -> target 02:15
         mock_time.strftime.side_effect = lambda fmt: {
             "%Y-%m-%d": "2026-02-19",
-            "%H:%M": "01:30",
+            "%H:%M": "02:10",
         }[fmt]
         c, *_ = self._make_collector(collect_time="02:00")
         assert c.should_poll() is False
 
+    @patch("app.modules.bqm.collector.random")
     @patch("app.modules.bqm.collector.time")
-    def test_should_poll_after_target(self, mock_time):
-        """Should poll if current time is at/after configured collect_time."""
+    def test_should_poll_after_target(self, mock_time, mock_random):
+        """Should poll if current time is at/after target + spread offset."""
+        mock_random.randint.return_value = 15  # 15 min offset -> target 02:15
         mock_time.strftime.side_effect = lambda fmt: {
             "%Y-%m-%d": "2026-02-19",
-            "%H:%M": "02:00",
+            "%H:%M": "02:15",
         }[fmt]
         c, *_ = self._make_collector(collect_time="02:00")
         assert c.should_poll() is True
 
+    @patch("app.modules.bqm.collector.random")
     @patch("app.modules.bqm.collector.time")
-    def test_should_poll_not_twice_same_day(self, mock_time):
+    def test_should_poll_not_twice_same_day(self, mock_time, mock_random):
         """Should not poll again after collecting today."""
+        mock_random.randint.return_value = 0
         mock_time.strftime.side_effect = lambda fmt: {
             "%Y-%m-%d": "2026-02-19",
             "%H:%M": "03:00",
@@ -493,6 +499,26 @@ class TestBQMCollector:
         c, *_ = self._make_collector(collect_time="02:00")
         c._last_date = "2026-02-19"
         assert c.should_poll() is False
+
+    @patch("app.modules.bqm.collector.random")
+    def test_spread_offset_within_range(self, mock_random):
+        """Spread offset should be between 0 and 60 minutes."""
+        mock_random.randint.return_value = 42
+        c, *_ = self._make_collector()
+        assert c._spread_offset == 42
+        mock_random.randint.assert_called_with(0, 60)
+
+    @patch("app.modules.bqm.collector.random")
+    @patch("app.modules.bqm.collector.time")
+    def test_spread_offset_wraps_past_midnight(self, mock_time, mock_random):
+        """Spread offset should wrap correctly past midnight."""
+        mock_random.randint.return_value = 45  # 23:30 + 45 min = 00:15
+        mock_time.strftime.side_effect = lambda fmt: {
+            "%Y-%m-%d": "2026-02-19",
+            "%H:%M": "00:15",
+        }[fmt]
+        c, *_ = self._make_collector(collect_time="23:30")
+        assert c.should_poll() is True
 
 
 # ── build_collectors Tests ──

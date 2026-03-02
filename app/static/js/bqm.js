@@ -10,6 +10,7 @@ var _bqmCalMonth = new Date().getMonth(); // 0-based
 var _bqmDatesLoaded = false;
 var _bqmLiveTimer = null;
 var _BQM_LIVE_INTERVAL = 900000; // 15 min
+var _BQM_LIVE_JITTER = 120000; // 0-120s random offset
 var _bqmSlideshow = { playing: false, speed: 2000, range: [], currentIdx: 0, timer: null };
 var _bqmRangeStart = null;
 var _bqmRangeEnd = null;
@@ -187,15 +188,22 @@ function hideBqmLiveBadge() {
 function startBqmLiveRefresh() {
     stopBqmLiveRefresh();
     if (bqmDate === todayStr()) {
-        _bqmLiveTimer = setInterval(function() {
-            if (currentView !== 'bqm' || document.hidden || bqmDate !== todayStr()) return;
-            loadBqmLive();
-        }, _BQM_LIVE_INTERVAL);
+        (function scheduleTick() {
+            var jitter = Math.floor(Math.random() * _BQM_LIVE_JITTER);
+            _bqmLiveTimer = setTimeout(function() {
+                if (currentView !== 'bqm' || document.hidden || bqmDate !== todayStr()) {
+                    scheduleTick();
+                    return;
+                }
+                loadBqmLive();
+                scheduleTick();
+            }, _BQM_LIVE_INTERVAL + jitter);
+        })();
     }
 }
 
 function stopBqmLiveRefresh() {
-    if (_bqmLiveTimer) { clearInterval(_bqmLiveTimer); _bqmLiveTimer = null; }
+    if (_bqmLiveTimer) { clearTimeout(_bqmLiveTimer); _bqmLiveTimer = null; }
 }
 
 /* ── BQM Slideshow ── */

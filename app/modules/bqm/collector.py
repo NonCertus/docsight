@@ -1,6 +1,7 @@
 """BQM collector -- daily ThinkBroadband quality graph fetch."""
 
 import logging
+import random
 import time
 from datetime import date, timedelta
 
@@ -26,16 +27,20 @@ class BQMCollector(Collector):
         self._config_mgr = config_mgr
         self._storage = BqmStorage(storage.db_path)
         self._last_date = None
+        self._spread_offset = random.randint(0, 60)  # 0-60 min spread
 
     def is_enabled(self) -> bool:
         return self._config_mgr.is_bqm_configured()
 
     def should_poll(self) -> bool:
-        """True if configured time has passed today and not yet collected."""
+        """True if configured time + spread offset has passed today."""
         today = time.strftime("%Y-%m-%d")
         if today == self._last_date:
             return False
         target = self._config_mgr.get("bqm_collect_time") or "02:00"
+        h, m = map(int, target.split(":"))
+        total = h * 60 + m + self._spread_offset
+        target = f"{(total // 60) % 24:02d}:{total % 60:02d}"
         now_hm = time.strftime("%H:%M")
         return now_hm >= target
 
