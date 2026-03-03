@@ -64,6 +64,7 @@
   "power_dbmv": "Potencia (dBmV)",
   "snr_db": "SNR (dB)",
   "modulation": "Modulación",
+  "th_power": "Potencia",
   "corr": "Corr.",
   "uncorr": "No corr.",
   "multiplex": "Multiplex",

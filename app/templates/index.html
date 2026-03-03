@@ -323,7 +323,7 @@
     {% set snr_health = 'crit' if 'snr_critical' in s.health_issues else ('warn' if 'snr_warn' in s.health_issues else 'good') %}
 
     {# ── Health label mapping ── #}
-    {% set health_labels = {'good': 'Good', 'warn': 'Marginal', 'crit': 'Poor'} %}
+    {% set health_labels = {'good': t.health_good, 'warn': t.health_marginal, 'crit': t.health_poor} %}
 
     {# ── Speedtest health (for new Metric Summary Row) ── #}
     {% if speedtest_configured and speedtest_latest %}
@@ -366,7 +366,7 @@
         {# Card 1: DS Power #}
         <div class="metric-card glass">
             <div class="metric-header">
-                <span class="metric-label">DS Power</span>
+                <span class="metric-label">{{ t.signal_ds_power }}</span>
                 <div class="metric-icon purple"><i data-lucide="arrow-down"></i></div>
             </div>
             <div class="metric-value" style="color:var(--{{ ds_pwr_health }});">{{ s.ds_power_avg }}<span class="unit">dBmV</span></div>
@@ -379,7 +379,7 @@
         {# Card 2: US Power #}
         <div class="metric-card glass">
             <div class="metric-header">
-                <span class="metric-label">US Power</span>
+                <span class="metric-label">{{ t.signal_us_power }}</span>
                 <div class="metric-icon blue"><i data-lucide="arrow-up"></i></div>
             </div>
             <div class="metric-value" style="color:var(--{{ us_health }});">{{ s.us_power_avg }}<span class="unit">dBmV</span></div>
@@ -411,7 +411,7 @@
             <div class="metric-value" style="color:var(--{{ error_health }});">{{ s.ds_uncorr_pct }}<span class="unit">%</span></div>
             <div class="metric-sub">
                 <span class="badge badge-{{ error_health }}">{{ health_labels[error_health] }}</span>
-                <span class="range">{{ s.ds_correctable_errors|fmt_k }} corr. / {{ s.ds_uncorrectable_errors|fmt_k }} uncorr.</span>
+                <span class="range">{{ s.ds_correctable_errors|fmt_k }} {{ t.corr }} / {{ s.ds_uncorrectable_errors|fmt_k }} {{ t.uncorr }}</span>
             </div>
         </div>
 
@@ -545,8 +545,8 @@
                 <div class="table-scroll">
                     <table class="channel-table">
                         <thead><tr>
-                            <th>Ch</th><th>{{ t.frequency }}</th><th>Power</th>
-                            <th>SNR</th><th>Mod.</th><th>Health</th>
+                            <th>Ch</th><th>{{ t.frequency }}</th><th>{{ t.th_power }}</th>
+                            <th>SNR</th><th>Mod.</th><th>{{ t.signal_health }}</th>
                         </tr></thead>
                         <tbody>
                         {% for ch in group.list %}
@@ -601,8 +601,8 @@
                 <div class="table-scroll">
                     <table class="channel-table">
                         <thead><tr>
-                            <th>Ch</th><th>{{ t.frequency }}</th><th>Power</th>
-                            <th>Mod.</th><th>Health</th>
+                            <th>Ch</th><th>{{ t.frequency }}</th><th>{{ t.th_power }}</th>
+                            <th>Mod.</th><th>{{ t.signal_health }}</th>
                         </tr></thead>
                         <tbody>
                         {% for ch in group.list %}
@@ -614,7 +614,7 @@
                             <td>{{ ch.channel_id }}</td>
                             <td>{{ ch.frequency }}{% if ch.frequency and 'MHz' not in ch.frequency|string %} MHz{% endif %}</td>
                             <td class="{% if ch.power is not none %}{% if 'power critical' in ch.health_detail %}val-crit{% elif 'power warning' in ch.health_detail %}val-warn{% else %}val-good{% endif %}{% endif %}">{{ ch.power if ch.power is not none else "—" }}{% if ch.power is not none %} dBmV{% endif %}</td>
-                            <td>{{ ch.modulation }}</td>
+                            <td class="{% if ch.modulation %}{% if 'modulation critical' in ch.health_detail %}val-crit{% elif 'modulation warning' in ch.health_detail %}val-warn{% else %}val-good{% endif %}{% endif %}">{{ ch.modulation }}</td>
                             <td>
                                 {% if ch.health == "good" %}<span class="badge badge-good">{{ health_labels.good }}</span>
                                 {% elif ch.health == "critical" %}<span class="badge badge-crit" title="{{ ch_tip }}">{{ health_labels.crit }}</span>
@@ -629,7 +629,7 @@
         </div>
         {% endfor %}
     </div>
-    
+
     {% if not has_us_ofdma %}
     <div class="card-notice card-notice-warn" style="margin-top:8px;">
         <span>&#9888;</span> {{ t.card_no_docsis31 }}
