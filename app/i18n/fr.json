@@ -79,6 +79,8 @@
   "low": "faible",
   "error_label": "Erreur",
   "waiting_msg": "En attente de la première requête DOCSIS...",
+  "no_docsis_title": "Mode routeur générique",
+  "no_docsis_msg": "Les données de canaux DOCSIS ne sont pas disponibles dans ce mode. Si vous êtes connecté par fibre, DSL ou satellite, les métriques ci-dessous indiquent la qualité de votre connexion.",
   "no_data": "Aucune donnée disponible pour cette période.",
   "trend_error": "Erreur lors du chargement des tendances.",
   "correctable": "Corrigeables",
