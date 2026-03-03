@@ -12,6 +12,7 @@ from app.modules.speedtest.collector import SpeedtestCollector
 from app.modules.bqm.collector import BQMCollector
 from app.drivers.base import ModemDriver
 from app.drivers.fritzbox import FritzBoxDriver
+from app.drivers.ch7465 import CH7465Driver
 
 
 # ── CollectorResult Tests ──
@@ -201,6 +202,38 @@ class TestFritzBoxDriver:
         d.login()
         result = d.get_connection_info()
         assert result["max_downstream_kbps"] == 1000000
+
+
+# ── CH7465Driver Tests ──
+
+
+class TestCH7465Driver:
+    @patch("app.drivers.ch7465.requests.Session")
+    def test_login_sends_username_when_provided(self, mock_session_cls):
+        """Login payload includes Username when user is non-empty."""
+        d = CH7465Driver("http://192.168.100.1", "admin", "pass")
+        d._session.get.return_value = MagicMock(status_code=200)
+        d._set_data = MagicMock(return_value="successSID=abc123")
+
+        d.login()
+
+        payload = d._set_data.call_args[0][1]
+        assert "Username" in payload
+        assert payload["Username"] == "admin"
+        assert "Password" in payload
+
+    @patch("app.drivers.ch7465.requests.Session")
+    def test_login_omits_username_when_empty(self, mock_session_cls):
+        """Login payload omits Username for password-only firmware (e.g. Play/Poland)."""
+        d = CH7465Driver("http://192.168.100.1", "", "pass")
+        d._session.get.return_value = MagicMock(status_code=200)
+        d._set_data = MagicMock(return_value="successSID=abc123")
+
+        d.login()
+
+        payload = d._set_data.call_args[0][1]
+        assert "Username" not in payload
+        assert "Password" in payload
 
 
 # ── ModemCollector Tests ──

@@ -85,10 +85,11 @@ class CH7465Driver(ModemDriver):
         r.raise_for_status()
         r.close()
 
-        response_text = self._set_data(Action.LOGIN, {
-            "Username": self._user,
-            "Password": pw_hash
-        })
+        payload = {"Password": pw_hash}
+        if self._user:
+            payload["Username"] = self._user
+
+        response_text = self._set_data(Action.LOGIN, payload)
 
         if response_text.startswith("success") and 'SID=' in response_text:
             sid = response_text.split('SID=', 1)[1]
