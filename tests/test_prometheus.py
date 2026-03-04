@@ -500,21 +500,27 @@ class TestEdgeCases:
 
     def test_no_flask_import(self):
         """prometheus.py must not import Flask."""
-        import importlib
         import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "app.prometheus",
-            "/c/Users/denni/Projects/docsight/app/prometheus.py"
-        )
-        # Just check the source doesn't contain Flask import
-        with open("/c/Users/denni/Projects/docsight/app/prometheus.py", "r") as f:
-            source = f.read()
-        assert "flask" not in source.lower() or "# flask" in source.lower()
+        import pathlib
+        import re
+
+        spec = importlib.util.find_spec("app.prometheus")
+        assert spec is not None, "app.prometheus module not found"
+        source_path = pathlib.Path(spec.origin)
+        source = source_path.read_text(encoding="utf-8")
+        # Check that there are no actual import statements for flask
+        has_flask_import = bool(re.search(r"^(import flask|from flask)", source, re.MULTILINE | re.IGNORECASE))
+        assert not has_flask_import, "prometheus.py must not contain Flask imports"
 
     def test_reuses_parse_qam_order_from_analyzer(self):
         """prometheus.py must import _parse_qam_order from app.analyzer."""
-        with open("/c/Users/denni/Projects/docsight/app/prometheus.py", "r") as f:
-            source = f.read()
+        import importlib.util
+        import pathlib
+
+        spec = importlib.util.find_spec("app.prometheus")
+        assert spec is not None, "app.prometheus module not found"
+        source_path = pathlib.Path(spec.origin)
+        source = source_path.read_text(encoding="utf-8")
         assert "_parse_qam_order" in source
         assert "analyzer" in source
 
