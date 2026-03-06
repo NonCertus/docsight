@@ -97,6 +97,7 @@ Open `http://localhost:8765` — no setup required.
 | **[Signal Trends](https://github.com/itsDNNS/docsight/wiki/Features-Signal-Trends)** | Interactive charts with DOCSIS reference zones (day/week/month) |
 | **[Correlation Analysis](https://github.com/itsDNNS/docsight/wiki/Features-Correlation-Analysis)** | Unified timeline combining signal, speedtest, and event data |
 | **[Gaming Quality Index](https://github.com/itsDNNS/docsight/wiki/Features-Gaming-Quality)** | **NEW:** A-F grade for gaming readiness based on latency, jitter, and signal health |
+| **[Modulation Performance](https://github.com/itsDNNS/docsight/wiki/Features-Modulation-Performance)** | **NEW:** Per-protocol-group modulation health index with intraday channel drill-down |
 | **[Event Log](https://github.com/itsDNNS/docsight/wiki/Features-Event-Log)** | Automatic anomaly detection with modulation watchdog |
 | **[Speedtest Integration](https://github.com/itsDNNS/docsight/wiki/Features-Speedtest)** | Speed test history from [Speedtest Tracker](https://github.com/alexjustesen/speedtest-tracker) |
 | **[Incident Journal](https://github.com/itsDNNS/docsight/wiki/Features-Incident-Journal)** | Document ISP issues with icons, Excel/CSV import, search, attachments, **incident groups**, and export (CSV/JSON/Markdown) |
@@ -278,6 +279,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). **Please open an issue before working on
 | Self-Hosted Dependencies (Offline) | ✅ Released | — |
 | Community Modem Drivers | ✅ Released | [#131](https://github.com/itsDNNS/docsight/issues/131) |
 | Non-DOCSIS Router Support | ✅ Released | [#129](https://github.com/itsDNNS/docsight/issues/129) |
+| Modulation Performance | ✅ Released | [#92](https://github.com/itsDNNS/docsight/issues/92) |
 
 **Planned:**
 
