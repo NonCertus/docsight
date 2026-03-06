@@ -194,7 +194,19 @@ def compute_distribution_v2(snapshots, direction, tz_name, low_qam_threshold=16)
     # Total samples = number of snapshots (each snapshot is one poll)
     total_sample_count = sum(len(groups) for groups in by_date.values())
     num_days = len(sorted_dates)
-    expected_samples = num_days * 96
+
+    # Estimate expected samples from actual poll cadence rather than assuming 15min
+    if num_days >= 2:
+        # Use median daily count from complete days (exclude first/last partial days)
+        daily_counts = sorted(len(by_date[d]) for d in sorted_dates)
+        # Use the median of all days as the expected per-day rate
+        mid = len(daily_counts) // 2
+        expected_per_day = daily_counts[mid] if daily_counts else 96
+    elif num_days == 1 and total_sample_count > 0:
+        expected_per_day = total_sample_count
+    else:
+        expected_per_day = 96
+    expected_samples = num_days * expected_per_day
     density = round(total_sample_count / expected_samples, 2) if expected_samples > 0 else 0
     density = min(density, 1.0)
 

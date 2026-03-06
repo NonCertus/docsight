@@ -508,9 +508,22 @@ class TestComputeDistributionV2:
     def test_sample_density(self):
         snaps = [_make_snapshot("2026-03-01T10:00:00Z", us_channels=_make_channels(["64QAM"]))]
         result = compute_distribution_v2(snaps, "us", "UTC")
-        assert result["expected_samples"] == 96
+        # Single day with 1 snapshot: expected = 1 * 1 = 1
+        assert result["expected_samples"] == 1
         assert result["sample_count"] == 1
-        assert result["sample_density"] == 0.01
+        assert result["sample_density"] == 1.0
+
+    def test_sample_density_multi_day(self):
+        # 3 days, 10 snapshots each — expected uses median (10)
+        snaps = []
+        for day in range(1, 4):
+            for hour in range(10):
+                ts = f"2026-03-0{day}T{hour:02d}:00:00Z"
+                snaps.append(_make_snapshot(ts, us_channels=_make_channels(["64QAM"])))
+        result = compute_distribution_v2(snaps, "us", "UTC")
+        assert result["sample_count"] == 30
+        assert result["expected_samples"] == 30  # 3 days * median(10) = 30
+        assert result["sample_density"] == 1.0
 
     def test_disclaimer_present(self):
         result = compute_distribution_v2([], "us", "UTC")
