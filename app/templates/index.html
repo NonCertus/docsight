@@ -65,7 +65,7 @@
     <div class="sidebar-content">
         <div class="nav-group-label">{{ t.sidebar_monitoring }}</div>
         <a class="nav-item active" data-view="live">
-            <i data-lucide="layout-dashboard"></i> {{ t.live_dashboard }}
+            <i data-lucide="layout-dashboard"></i> {{ t.home }}
         </a>
         <a class="nav-item" data-view="events">
             <i data-lucide="bell"></i> {{ t.event_log }}
@@ -1240,7 +1240,7 @@
                 <button class="trend-tab active" data-value="ds" onclick="selectPill(this, onCompareDirectionChange)">{{ t.downstream }}</button>
                 <button class="trend-tab" data-value="us" onclick="selectPill(this, onCompareDirectionChange)">{{ t.upstream }}</button>
             </div>
-            <select id="compare-channel-select"><option value="">{{ t.select_channel }}</option></select>
+            <select id="compare-channel-select" class="channel-select-styled"><option value="">{{ t.select_channel }}</option></select>
             <button class="compare-add-btn" onclick="addCompareChannel()">+ {{ t.add_channel }}</button>
             <div class="trend-tabs" id="compare-time-tabs">
                 <button class="trend-tab" data-value="1" onclick="selectPill(this, loadCompareCharts)">1d</button>
