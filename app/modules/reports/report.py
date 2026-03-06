@@ -125,8 +125,9 @@ REPORT_STRINGS = {
         "col_reference": "Reference",
         # Stats
         "total_measurements": "Total Measurements",
-        "measurements_poor": "POOR health",
+        "measurements_critical": "CRITICAL health",
         "measurements_marginal": "MARGINAL health",
+        "measurements_tolerated": "TOLERATED health",
         "worst_recorded": "Worst Recorded Values",
         "ds_power_worst": "DS Power (worst max)",
         "us_power_worst": "US Power (worst max)",
@@ -145,7 +146,7 @@ REPORT_STRINGS = {
             "between {start} and {end}."
         ),
         "complaint_findings": "Key findings:",
-        "complaint_poor_rate": "Connection rated POOR in {poor} of {total} measurements ({pct}%)",
+        "complaint_poor_rate": "Connection rated CRITICAL in {poor} of {total} measurements ({pct}%)",
         "complaint_ds_power": "Worst downstream power: {val} dBmV (threshold: {thresh})",
         "complaint_us_power": "Worst upstream power: {val} dBmV (threshold: {thresh})",
         "complaint_snr": "Worst downstream SNR: {val} dB (threshold: {thresh})",
@@ -240,8 +241,9 @@ REPORT_STRINGS = {
         "col_warning": "Warnung",
         "col_reference": "Referenz",
         "total_measurements": "Messungen gesamt",
-        "measurements_poor": "Zustand SCHLECHT",
+        "measurements_critical": "Zustand KRITISCH",
         "measurements_marginal": "Zustand GRENZWERTIG",
+        "measurements_tolerated": "Zustand TOLERIERT",
         "worst_recorded": "Schlechteste gemessene Werte",
         "ds_power_worst": "DS-Pegel (schlechtester Max.)",
         "us_power_worst": "US-Pegel (schlechtester Max.)",
@@ -259,7 +261,7 @@ REPORT_STRINGS = {
             "im Zeitraum vom {start} bis {end} erfasst."
         ),
         "complaint_findings": "Wesentliche Ergebnisse:",
-        "complaint_poor_rate": "Verbindung als SCHLECHT bewertet in {poor} von {total} Messungen ({pct}%)",
+        "complaint_poor_rate": "Verbindung als KRITISCH bewertet in {poor} von {total} Messungen ({pct}%)",
         "complaint_ds_power": "Schlechtester Downstream-Pegel: {val} dBmV (Grenzwert: {thresh})",
         "complaint_us_power": "Schlechtester Upstream-Pegel: {val} dBmV (Grenzwert: {thresh})",
         "complaint_snr": "Schlechtester Downstream-SNR: {val} dB (Grenzwert: {thresh})",
@@ -355,8 +357,9 @@ REPORT_STRINGS = {
         "col_warning": "Alerte",
         "col_reference": "Référence",
         "total_measurements": "Mesures totales",
-        "measurements_poor": "État MAUVAIS",
+        "measurements_critical": "État CRITIQUE",
         "measurements_marginal": "État LIMITE",
+        "measurements_tolerated": "État TOLÉRÉ",
         "worst_recorded": "Pires valeurs enregistrées",
         "ds_power_worst": "Puiss DS (pire max)",
         "us_power_worst": "Puiss US (pire max)",
@@ -374,7 +377,7 @@ REPORT_STRINGS = {
             "j'ai collecté {count} mesures entre le {start} et le {end}."
         ),
         "complaint_findings": "Résultats principaux :",
-        "complaint_poor_rate": "Connexion évaluée MAUVAISE dans {poor} sur {total} mesures ({pct}%)",
+        "complaint_poor_rate": "Connexion évaluée CRITIQUE dans {poor} sur {total} mesures ({pct}%)",
         "complaint_ds_power": "Pire puissance descendante : {val} dBmV (seuil : {thresh})",
         "complaint_us_power": "Pire puissance montante : {val} dBmV (seuil : {thresh})",
         "complaint_snr": "Pire SNR descendant : {val} dB (seuil : {thresh})",
@@ -471,8 +474,9 @@ REPORT_STRINGS = {
         "col_warning": "Alerta",
         "col_reference": "Referencia",
         "total_measurements": "Mediciones totales",
-        "measurements_poor": "Estado MALO",
+        "measurements_critical": "Estado CRÍTICO",
         "measurements_marginal": "Estado MARGINAL",
+        "measurements_tolerated": "Estado TOLERADO",
         "worst_recorded": "Peores valores registrados",
         "ds_power_worst": "Pot DS (peor máx)",
         "us_power_worst": "Pot US (peor máx)",
@@ -490,7 +494,7 @@ REPORT_STRINGS = {
             "he recopilado {count} mediciones entre el {start} y el {end}."
         ),
         "complaint_findings": "Hallazgos principales:",
-        "complaint_poor_rate": "Conexión calificada como MALA en {poor} de {total} mediciones ({pct}%)",
+        "complaint_poor_rate": "Conexión calificada como CRÍTICA en {poor} de {total} mediciones ({pct}%)",
         "complaint_ds_power": "Peor potencia descendente: {val} dBmV (umbral: {thresh})",
         "complaint_us_power": "Peor potencia ascendente: {val} dBmV (umbral: {thresh})",
         "complaint_snr": "Peor SNR descendente: {val} dB (umbral: {thresh})",
@@ -604,6 +608,8 @@ class IncidentReport(FPDF):
     def _health_color(self, health):
         if health == "good":
             return (39, 174, 96)
+        elif health == "tolerated":
+            return (132, 204, 22)
         elif health == "marginal":
             return (243, 156, 18)
         return (231, 76, 60)
@@ -635,8 +641,9 @@ def _compute_worst_values(snapshots):
         "ds_snr_min": 999,
         "ds_uncorrectable_max": 0,
         "ds_correctable_max": 0,
-        "health_poor_count": 0,
+        "health_critical_count": 0,
         "health_marginal_count": 0,
+        "health_tolerated_count": 0,
         "total_snapshots": len(snapshots),
     }
     for snap in snapshots:
@@ -654,10 +661,12 @@ def _compute_worst_values(snapshots):
         if s.get("ds_correctable_errors", 0) > worst["ds_correctable_max"]:
             worst["ds_correctable_max"] = s.get("ds_correctable_errors", 0)
         health = s.get("health", "good")
-        if health == "poor":
-            worst["health_poor_count"] += 1
+        if health == "critical":
+            worst["health_critical_count"] += 1
         elif health == "marginal":
             worst["health_marginal_count"] += 1
+        elif health == "tolerated":
+            worst["health_tolerated_count"] += 1
     return worst
 
 
@@ -772,7 +781,7 @@ def generate_report(snapshots, current_analysis, config=None, connection_info=No
         worst = _compute_worst_values(snapshots)
 
         pdf._key_value(s["total_measurements"], str(worst["total_snapshots"]))
-        pdf._key_value(s["measurements_poor"], str(worst["health_poor_count"]), bold_value=True)
+        pdf._key_value(s["measurements_critical"], str(worst["health_critical_count"]), bold_value=True)
         pdf._key_value(s["measurements_marginal"], str(worst["health_marginal_count"]))
         pdf.ln(2)
 
@@ -826,13 +835,13 @@ def generate_report(snapshots, current_analysis, config=None, connection_info=No
         warn = _default_warn_thresholds()
         start = snapshots[0]["timestamp"][:10]
         end = snapshots[-1]["timestamp"][:10]
-        poor_pct = round(worst['health_poor_count'] / max(worst['total_snapshots'], 1) * 100)
+        poor_pct = round(worst['health_critical_count'] / max(worst['total_snapshots'], 1) * 100)
         complaint = (
             f"{s['complaint_subject']}\n\n"
             f"{s['complaint_greeting'].format(isp=isp)}\n\n"
             f"{s['complaint_body'].format(count=len(snapshots), start=start, end=end)}\n\n"
             f"{s['complaint_findings']}\n"
-            f"- {s['complaint_poor_rate'].format(poor=worst['health_poor_count'], total=worst['total_snapshots'], pct=poor_pct)}\n"
+            f"- {s['complaint_poor_rate'].format(poor=worst['health_critical_count'], total=worst['total_snapshots'], pct=poor_pct)}\n"
             f"- {s['complaint_ds_power'].format(val=worst['ds_power_max'], thresh=warn['ds_power'])}\n"
             f"- {s['complaint_us_power'].format(val=worst['us_power_max'], thresh=warn['us_power'])}\n"
             f"- {s['complaint_snr'].format(val=worst['ds_snr_min'], thresh=warn['snr'])}\n"
@@ -941,7 +950,7 @@ def generate_incident_report(incident, entries, snapshots, speedtests, bnetz_lis
         worst = _compute_worst_values(snapshots)
 
         pdf._key_value(s["total_measurements"], str(worst["total_snapshots"]))
-        pdf._key_value(s["measurements_poor"], str(worst["health_poor_count"]), bold_value=True)
+        pdf._key_value(s["measurements_critical"], str(worst["health_critical_count"]), bold_value=True)
         pdf._key_value(s["measurements_marginal"], str(worst["health_marginal_count"]))
         pdf.ln(2)
 
@@ -1113,13 +1122,13 @@ def generate_incident_report(incident, entries, snapshots, speedtests, bnetz_lis
         warn = _default_warn_thresholds()
         start = snapshots[0]["timestamp"][:10]
         end = snapshots[-1]["timestamp"][:10]
-        poor_pct = round(worst['health_poor_count'] / max(worst['total_snapshots'], 1) * 100)
+        poor_pct = round(worst['health_critical_count'] / max(worst['total_snapshots'], 1) * 100)
         complaint = (
             f"{s['complaint_subject']}\n\n"
             f"{s['complaint_greeting'].format(isp=isp)}\n\n"
             f"{s['complaint_body'].format(count=len(snapshots), start=start, end=end)}\n\n"
             f"{s['complaint_findings']}\n"
-            f"- {s['complaint_poor_rate'].format(poor=worst['health_poor_count'], total=worst['total_snapshots'], pct=poor_pct)}\n"
+            f"- {s['complaint_poor_rate'].format(poor=worst['health_critical_count'], total=worst['total_snapshots'], pct=poor_pct)}\n"
             f"- {s['complaint_ds_power'].format(val=worst['ds_power_max'], thresh=warn['ds_power'])}\n"
             f"- {s['complaint_us_power'].format(val=worst['us_power_max'], thresh=warn['us_power'])}\n"
             f"- {s['complaint_snr'].format(val=worst['ds_snr_min'], thresh=warn['snr'])}\n"
@@ -1245,13 +1254,13 @@ def generate_complaint_text(snapshots, config=None, connection_info=None, lang="
         warn = _default_warn_thresholds()
         start = snapshots[0]["timestamp"][:10]
         end = snapshots[-1]["timestamp"][:10]
-        poor_pct = round(worst['health_poor_count'] / max(worst['total_snapshots'], 1) * 100)
+        poor_pct = round(worst['health_critical_count'] / max(worst['total_snapshots'], 1) * 100)
         return (
             f"{s['complaint_subject']}\n\n"
             f"{s['complaint_greeting'].format(isp=isp)}\n\n"
             f"{s['complaint_body'].format(count=len(snapshots), start=start, end=end)}\n\n"
             f"{s['complaint_findings']}\n"
-            f"- {s['complaint_poor_rate'].format(poor=worst['health_poor_count'], total=worst['total_snapshots'], pct=poor_pct)}\n"
+            f"- {s['complaint_poor_rate'].format(poor=worst['health_critical_count'], total=worst['total_snapshots'], pct=poor_pct)}\n"
             f"- {s['complaint_ds_power'].format(val=worst['ds_power_max'], thresh=warn['ds_power'])}\n"
             f"- {s['complaint_us_power'].format(val=worst['us_power_max'], thresh=warn['us_power'])}\n"
             f"- {s['complaint_snr'].format(val=worst['ds_snr_min'], thresh=warn['snr'])}\n"
