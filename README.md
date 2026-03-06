@@ -300,7 +300,7 @@ If DOCSight helps you, you can support development here:
 
 ## Documentation
 
-Documentation current as of **v2026-03-03.1**.
+Documentation current as of **v2026-03-06.2**.
 
 | Document | Scope |
 |---|---|

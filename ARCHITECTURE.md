@@ -1,6 +1,6 @@
 # DOCSight Architecture
 
-> Documentation current as of **v2026-02-22.4**
+> Documentation current as of **v2026-03-06.2**
 
 This document describes the technical architecture of DOCSight.
 
@@ -438,7 +438,7 @@ Variant is auto-detected on first login: CGA is tried first, then TG on failure.
 │    • Load thresholds from thresholds.json                    │
 │    • Parse DS/US channels                                    │
 │    • Assess power, SNR, errors per channel                   │
-│    • Aggregate to overall health (good/marginal/poor)        │
+│    • Aggregate to overall health (good/tolerated/marginal/critical) │
 │    • Return structured analysis dict                         │
 └────────────────────┬─────────────────────────────────────────┘
                      │
