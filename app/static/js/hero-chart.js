@@ -1,5 +1,5 @@
 /**
- * Hero Trend Chart - Phase 3 Task 3.1
+ * Hero Trend Chart - uPlot
  *
  * Displays inline SNR + Power trend in the hero card
  * Dual Y-axis chart with 24h history
@@ -7,7 +7,8 @@
 (function() {
     'use strict';
 
-    let heroChartInstance = null;
+    var heroChartInstance = null;
+    var heroResizeObs = null;
 
     function getThemeColors() {
         var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
@@ -21,237 +22,243 @@
         };
     }
 
+    function destroyHero() {
+        if (heroResizeObs) { heroResizeObs.disconnect(); heroResizeObs = null; }
+        if (heroChartInstance) { heroChartInstance.destroy(); heroChartInstance = null; }
+    }
+
+    function getContainer() {
+        var el = document.getElementById('hero-trend-chart');
+        if (!el) return null;
+        if (el.tagName === 'CANVAS') {
+            var div = document.createElement('div');
+            div.id = 'hero-trend-chart';
+            div.style.width = '100%';
+            div.style.height = '100%';
+            el.parentNode.replaceChild(div, el);
+            return div;
+        }
+        el.textContent = '';
+        el.style.width = '100%';
+        el.style.height = '100%';
+        return el;
+    }
+
     function initHeroChart() {
-        const ctx = document.getElementById('hero-trend-chart');
-        if (!ctx) {
-            console.warn('[HeroChart] Canvas element #hero-trend-chart not found');
-            return;
-        }
+        destroyHero();
+        var container = getContainer();
+        if (!container) return;
 
-        // Destroy existing chart instance to prevent memory leaks and rendering issues
-        if (heroChartInstance) {
-            heroChartInstance.destroy();
-            heroChartInstance = null;
-        }
-
-        // Fetch trend data (all snapshots, will filter to 24h)
         fetch('/api/trends')
-            .then(r => {
-                if (!r.ok) throw new Error(`API error: ${r.status}`);
+            .then(function(r) {
+                if (!r.ok) throw new Error('API error: ' + r.status);
                 return r.json();
             })
-            .then(data => {
+            .then(function(data) {
                 if (!data || !Array.isArray(data) || data.length === 0) {
-                    console.warn('[HeroChart] No trend data available');
-                    renderEmptyChart(ctx);
+                    renderEmptyChart(container);
                     return;
                 }
-
-                // Filter to last 24h
-                const now = new Date();
-                const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-                const filtered = data.filter(d => {
-                    const ts = new Date(d.timestamp);
-                    return ts >= twentyFourHoursAgo;
-                });
-
+                var now = new Date();
+                var cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                var filtered = data.filter(function(d) { return new Date(d.timestamp) >= cutoff; });
                 if (filtered.length === 0) {
-                    console.warn('[HeroChart] No data in last 24h');
-                    renderEmptyChart(ctx);
+                    renderEmptyChart(container);
                     return;
                 }
-
-                renderChart(ctx, filtered);
+                renderChart(container, filtered);
             })
-            .catch(err => {
+            .catch(function(err) {
                 console.error('[HeroChart] Failed to load data:', err);
-                renderEmptyChart(ctx);
+                renderEmptyChart(container);
             });
     }
 
-    function renderChart(ctx, data) {
-        var c = getThemeColors();
-
-        // Prepare datasets (timestamp is ISO string, not unix timestamp)
-        const labels = data.map(d => new Date(d.timestamp));
-        const dsPower = data.map(d => d.ds_power_avg);
-        const usPower = data.map(d => d.us_power_avg);
-        const snr = data.map(d => d.ds_snr_avg);
-
-        heroChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: T.chart_ds_power || 'DS Power (dBmV)',
-                    data: dsPower,
-                    borderColor: 'rgba(168,85,247,0.9)',
-                    backgroundColor: 'rgba(168,85,247,0.15)',
-                    yAxisID: 'y-power',
-                    tension: 0.3,
-                    pointRadius: 0,
-                    borderWidth: 2,
-                    fill: true
-                }, {
-                    label: T.chart_us_power || 'US Power (dBmV)',
-                    data: usPower,
-                    borderColor: 'rgba(245,158,11,0.9)',
-                    backgroundColor: 'rgba(245,158,11,0.15)',
-                    yAxisID: 'y-power',
-                    tension: 0.3,
-                    pointRadius: 0,
-                    borderWidth: 2,
-                    fill: true
-                }, {
-                    label: T.chart_snr || 'SNR (dB)',
-                    data: snr,
-                    borderColor: 'rgba(59,130,246,0.9)',
-                    backgroundColor: 'rgba(59,130,246,0.15)',
-                    yAxisID: 'y-snr',
-                    tension: 0.3,
-                    pointRadius: 0,
-                    borderWidth: 2,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            color: c.text,
-                            font: { size: 11 },
-                            padding: 12,
-                            usePointStyle: true
-                        }
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        backgroundColor: c.tooltipBg,
-                        titleColor: c.text,
-                        bodyColor: c.text,
-                        borderColor: c.tooltipBorder,
-                        borderWidth: 1,
-                        padding: 12,
-                        displayColors: true,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                label += context.parsed.y.toFixed(1);
-                                if (context.dataset.yAxisID === 'y-power') {
-                                    label += ' dBmV';
-                                } else {
-                                    label += ' dB';
-                                }
-                                return label;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'hour',
-                            displayFormats: { hour: 'HH:mm' },
-                            tooltipFormat: 'dd.MM HH:mm'
-                        },
-                        grid: {
-                            color: c.grid,
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: c.textMuted,
-                            font: { size: 10 }
-                        }
-                    },
-                    'y-power': {
-                        type: 'linear',
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: T.chart_power_axis || 'Power (dBmV)',
-                            color: 'rgba(168,85,247,0.9)',
-                            font: { size: 11, weight: 'bold' }
-                        },
-                        grid: {
-                            color: c.grid,
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: c.textMuted,
-                            font: { size: 10 }
-                        }
-                    },
-                    'y-snr': {
-                        type: 'linear',
-                        position: 'right',
-                        min: 10,
-                        max: 50,
-                        title: {
-                            display: true,
-                            text: T.chart_snr_axis || 'SNR (dB)',
-                            color: 'rgba(59,130,246,0.9)',
-                            font: { size: 11, weight: 'bold' }
-                        },
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            color: c.textMuted,
-                            font: { size: 10 }
-                        }
-                    }
-                }
+    function heroTooltipPlugin(timestamps) {
+        var tooltip;
+        function init(u) {
+            tooltip = document.createElement('div');
+            tooltip.className = 'uplot-tooltip';
+            tooltip.style.display = 'none';
+            u.over.appendChild(tooltip);
+        }
+        function setCursor(u) {
+            var idx = u.cursor.idx;
+            if (idx == null) { tooltip.style.display = 'none'; return; }
+            var c = getThemeColors();
+            tooltip.textContent = '';
+            var header = document.createElement('div');
+            header.style.cssText = 'font-weight:600;margin-bottom:4px;';
+            var ts = timestamps[idx];
+            header.textContent = ts ? formatHeroDate(ts) : '';
+            tooltip.appendChild(header);
+            var units = ['', 'dBmV', 'dBmV', 'dB'];
+            for (var i = 1; i < u.series.length; i++) {
+                var s = u.series[i];
+                if (!s.show) continue;
+                var val = u.data[i][idx];
+                if (val == null) continue;
+                var color = s._stroke || s.stroke;
+                if (typeof color === 'function') color = color(u, i);
+                var row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:6px;';
+                var marker = document.createElement('span');
+                marker.style.cssText = 'width:10px;height:3px;display:inline-block;border-radius:1px;background:' + color;
+                var label = document.createElement('span');
+                label.textContent = s.label + ': ' + val.toFixed(1) + ' ' + (units[i] || '');
+                row.appendChild(marker);
+                row.appendChild(label);
+                tooltip.appendChild(row);
             }
-        });
+            tooltip.style.display = 'block';
+            tooltip.style.background = c.tooltipBg;
+            tooltip.style.color = c.text;
+            tooltip.style.border = '1px solid ' + c.tooltipBorder;
+            var left = u.cursor.left;
+            var top = u.cursor.top;
+            var tw = tooltip.offsetWidth;
+            var th = tooltip.offsetHeight;
+            var x = left + 12;
+            var y = top - th - 8;
+            if (x + tw > u.over.offsetWidth) x = left - tw - 12;
+            if (y < 0) y = top + 12;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+        }
+        return { hooks: { init: [init], setCursor: [setCursor] } };
     }
 
-    function renderEmptyChart(ctx) {
-        var c = getThemeColors();
+    function formatHeroDate(ts) {
+        var d = new Date(ts);
+        var dd = d.getDate(), mm = d.getMonth() + 1, hh = d.getHours(), mi = d.getMinutes();
+        return (dd < 10 ? '0' : '') + dd + '.' + (mm < 10 ? '0' : '') + mm + ' ' +
+               (hh < 10 ? '0' : '') + hh + ':' + (mi < 10 ? '0' : '') + mi;
+    }
 
-        // Render placeholder when no data available
-        heroChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: []
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false }
-                },
-                scales: {
-                    x: { display: false },
-                    y: { display: false }
-                }
-            }
+    function renderChart(container, data) {
+        var c = getThemeColors();
+        var timestamps = data.map(function(d) { return d.timestamp; });
+        var xData = [];
+        for (var i = 0; i < data.length; i++) xData.push(i);
+        var dsPower = data.map(function(d) { return d.ds_power_avg; });
+        var usPower = data.map(function(d) { return d.us_power_avg; });
+        var snr = data.map(function(d) { return d.ds_snr_avg; });
+        var n = data.length;
+
+        /* X-axis: show formatted time labels */
+        var xLabels = timestamps.map(function(ts) {
+            var d = new Date(ts);
+            var hh = d.getHours(), mi = d.getMinutes();
+            return (hh < 10 ? '0' : '') + hh + ':' + (mi < 10 ? '0' : '') + mi;
         });
 
-        // Show placeholder text
-        const container = ctx.parentElement;
-        const placeholder = document.createElement('div');
+        var wrap = container.parentElement;
+        var width = container.offsetWidth || (wrap ? wrap.offsetWidth : 400);
+        var height = (wrap ? wrap.offsetHeight : 100) || 100;
+
+        var opts = {
+            width: width,
+            height: height,
+            scales: {
+                x: { time: false, range: function() { return [-0.5, n - 0.5]; } },
+                power: {},
+                snr: { range: [10, 50] }
+            },
+            axes: [
+                {
+                    scale: 'x',
+                    space: 50,
+                    splits: function() { var o = []; for (var j = 0; j < n; j++) o.push(j); return o; },
+                    filter: function(u, splits) {
+                        var max = Math.floor(width / 55);
+                        if (max < 2) max = 2;
+                        var step = Math.ceil(n / max);
+                        return splits.filter(function(v) { return v >= 0 && v < n && v % step === 0; });
+                    },
+                    values: function(u, vals) { return vals.map(function(v) { return xLabels[v] || ''; }); },
+                    stroke: c.textMuted,
+                    grid: { stroke: c.grid, width: 1 },
+                    ticks: { stroke: c.grid, width: 1 },
+                    font: '10px system-ui',
+                    gap: 2
+                },
+                {
+                    scale: 'power',
+                    side: 3,
+                    stroke: 'rgba(168,85,247,0.9)',
+                    grid: { stroke: c.grid, width: 1 },
+                    ticks: { stroke: c.grid, width: 1 },
+                    font: '10px system-ui',
+                    size: 42,
+                    gap: 2
+                },
+                {
+                    scale: 'snr',
+                    side: 1,
+                    stroke: 'rgba(59,130,246,0.9)',
+                    grid: { show: false },
+                    ticks: { stroke: 'rgba(59,130,246,0.2)', width: 1 },
+                    font: '10px system-ui',
+                    size: 36,
+                    gap: 2
+                }
+            ],
+            series: [
+                { label: 'X', value: function(u, v) { return xLabels[v] || ''; } },
+                {
+                    label: T.chart_ds_power || 'DS Power (dBmV)',
+                    stroke: 'rgba(168,85,247,0.9)',
+                    fill: 'rgba(168,85,247,0.15)',
+                    width: 2,
+                    scale: 'power',
+                    points: { show: false }
+                },
+                {
+                    label: T.chart_us_power || 'US Power (dBmV)',
+                    stroke: 'rgba(245,158,11,0.9)',
+                    fill: 'rgba(245,158,11,0.15)',
+                    width: 2,
+                    scale: 'power',
+                    points: { show: false }
+                },
+                {
+                    label: T.chart_snr || 'SNR (dB)',
+                    stroke: 'rgba(59,130,246,0.9)',
+                    fill: 'rgba(59,130,246,0.15)',
+                    width: 2,
+                    scale: 'snr',
+                    points: { show: false }
+                }
+            ],
+            cursor: { show: true, x: true, y: false, points: { show: false } },
+            legend: { show: true, live: false },
+            plugins: [heroTooltipPlugin(timestamps)]
+        };
+
+        heroChartInstance = new uPlot(opts, [xData, dsPower, usPower, snr], container);
+
+        heroResizeObs = new ResizeObserver(function(entries) {
+            var w = Math.round(entries[0].contentRect.width);
+            var h = Math.round(entries[0].contentRect.height);
+            if (w > 0 && h > 0 && (Math.abs(w - heroChartInstance.width) > 5 || Math.abs(h - heroChartInstance.height) > 5)) {
+                heroChartInstance.setSize({width: w, height: h});
+            }
+        });
+        heroResizeObs.observe(container);
+    }
+
+    function renderEmptyChart(container) {
+        var c = getThemeColors();
+        container.textContent = '';
+        container.style.position = 'relative';
+        var placeholder = document.createElement('div');
         placeholder.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:' + c.placeholder + ';font-size:13px;text-align:center;';
         placeholder.textContent = T.chart_no_history || 'No trend data available';
-        container.style.position = 'relative';
         container.appendChild(placeholder);
     }
 
-    // Expose refresh function globally for manual updates
     window.refreshHeroChart = initHeroChart;
 
-    // Re-render chart when theme changes
     var themeToggle = document.getElementById('theme-toggle-sidebar');
     if (themeToggle) {
         themeToggle.addEventListener('change', function() {
@@ -259,11 +266,9 @@
         });
     }
 
-    // Wait for DOM to be fully loaded
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initHeroChart);
     } else {
-        // DOM already loaded (script deferred or loaded late)
         initHeroChart();
     }
 })();

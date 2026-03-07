@@ -1,4 +1,4 @@
-var CACHE_NAME = 'docsight-v2';
+var CACHE_NAME = 'docsight-v3';
 var SHELL_URLS = [
   '/',
   '/static/css/fonts.css',
@@ -8,8 +8,8 @@ var SHELL_URLS = [
   '/static/css/views.css',
   '/static/css/modals.css',
   '/static/vendor/lucide.min.js',
-  '/static/vendor/chart.umd.min.js',
-  '/static/vendor/chartjs-adapter-date-fns.bundle.min.js',
+  '/static/vendor/uPlot.min.js',
+  '/static/vendor/uPlot.min.css',
   '/static/fonts/outfit-latin.woff2',
   '/static/fonts/outfit-latin-ext.woff2',
   '/static/fonts/jetbrains-mono-latin.woff2',

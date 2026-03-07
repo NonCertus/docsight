@@ -141,9 +141,26 @@
     color: var(--text);
     font-weight: 600;
 }
-.chart-card canvas {
+.chart-card canvas,
+.chart-card > div > .uplot {
     width: 100% !important;
     min-height: 200px;
+}
+.uplot { width: 100% !important; }
+.uplot .u-legend { font-size: 11px; }
+.uplot .u-legend th, .uplot .u-legend td { padding: 2px 6px; }
+
+/* uPlot tooltip */
+.uplot-tooltip {
+    position: absolute;
+    z-index: 100;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    line-height: 1.5;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 /* Responsive: Mobile stacking */

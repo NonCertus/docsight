@@ -1929,7 +1929,7 @@
             <h2 id="chart-zoom-title"></h2>
             <button class="modal-close" onclick="closeChartZoom()">&times;</button>
         </div>
-        <canvas id="chart-zoom-canvas"></canvas>
+        <div id="chart-zoom-canvas" style="flex:1;min-height:0;width:100%;"></div>
     </div>
 </div>
 
@@ -1962,8 +1962,8 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="/static/vendor/chart.umd.min.js"></script>
-<script src="/static/vendor/chartjs-adapter-date-fns.bundle.min.js"></script>
+<link rel="stylesheet" href="/static/vendor/uPlot.min.css">
+<script src="/static/vendor/uPlot.min.js"></script>
 <script src="{{ url_for('static', filename='js/hero-chart.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sparklines.js') }}"></script>
 
@@ -2364,7 +2364,7 @@ var T = {{ t|tojson }};
                 // Re-init sortable tables (event listeners lost on innerHTML replace)
                 initSortableTables();
 
-                // Re-init hero chart (Chart.js instance lost on innerHTML replace)
+                // Re-init hero chart (instance lost on innerHTML replace)
                 if (typeof window.refreshHeroChart === 'function') {
                     window.refreshHeroChart();
                 }
@@ -2374,7 +2374,7 @@ var T = {{ t|tojson }};
                     window.refreshSparklines();
                 }
 
-                // Re-init channel health donuts (Chart.js instances lost on innerHTML replace)
+                // Re-init channel health donuts (instances lost on innerHTML replace)
                 if (typeof window.refreshDonuts === 'function') {
                     window.refreshDonuts();
                 }

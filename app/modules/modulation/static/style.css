@@ -43,7 +43,8 @@
     position: relative;
     height: 300px;
 }
-.modulation-chart-wrap canvas {
+.modulation-chart-wrap canvas,
+.modulation-chart-wrap > div {
     display: block;
     width: 100%;
     height: 100%;
@@ -148,7 +149,8 @@
     margin-top: 8px;
 }
 
-.modulation-intraday-chart-wrap canvas {
+.modulation-intraday-chart-wrap canvas,
+.modulation-intraday-chart-wrap > div {
     display: block;
     width: 100%;
     height: 100%;

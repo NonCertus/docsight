@@ -1,5 +1,5 @@
 /* ═══ DOCSight Chart Engine ═══ */
-/* Chart.js rendering with DOCSIS threshold zones, zoom modal, and shared chart registry */
+/* uPlot rendering with DOCSIS threshold zones, zoom modal, and shared chart registry */
 
 /* ── Shared State ── */
 var charts = {};
@@ -16,47 +16,6 @@ function formatDateDE(str) {
     var p = str.split('-');
     return p[2] + '.' + p[1] + '.' + p[0];
 }
-
-/* ── Zone Plugin ── */
-var zonesPlugin = {
-    id: 'zones',
-    beforeDatasetsDraw: function(chart) {
-        var zones = chart._docsightZones;
-        if (!zones) return;
-        var ctx = chart.ctx;
-        var yAxis = chart.scales.y;
-        var chartArea = chart.chartArea;
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
-        ctx.clip();
-        var drawn = {};
-        zones.forEach(function(z) {
-            if (z.yMin !== undefined) return; /* skip metadata entries */
-            if (z.fill !== false) {
-                var top = yAxis.getPixelForValue(z.max);
-                var bottom = yAxis.getPixelForValue(z.min);
-                ctx.fillStyle = z.color;
-                ctx.fillRect(chartArea.left, top, chartArea.right - chartArea.left, bottom - top);
-            }
-            var lineColor = z.lineColor || z.color.replace(/[\d.]+\)$/, '0.7)');
-            var vals = z.fill === false ? [z.value] : [z.min, z.max];
-            vals.forEach(function(val) {
-                if (val === undefined || drawn[val]) return;
-                drawn[val] = true;
-                var py = yAxis.getPixelForValue(val);
-                ctx.beginPath();
-                ctx.setLineDash([6, 4]);
-                ctx.strokeStyle = lineColor;
-                ctx.lineWidth = 1;
-                ctx.moveTo(chartArea.left, py);
-                ctx.lineTo(chartArea.right, py);
-                ctx.stroke();
-            });
-        });
-        ctx.restore();
-    }
-};
 
 /* ── DOCSIS Threshold Definitions ── */
 var DS_POWER_THRESHOLDS = [
@@ -84,110 +43,386 @@ var US_POWER_THRESHOLDS = [
     {yMin: 17, yMax: 63}
 ];
 
+/* ── Zone Plugin (uPlot hooks) ── */
+function zonesPlugin(zones) {
+    if (!zones) return {};
+    return {
+        hooks: {
+            drawAxes: [function(u) {
+                var ctx = u.ctx;
+                var left = u.bbox.left;
+                var top = u.bbox.top;
+                var width = u.bbox.width;
+                var height = u.bbox.height;
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(left, top, width, height);
+                ctx.clip();
+                var drawn = {};
+                var dpr = window.devicePixelRatio || 1;
+                zones.forEach(function(z) {
+                    if (z.yMin !== undefined) return; /* skip metadata entries */
+                    if (z.fill !== false) {
+                        var ztop = u.valToPos(z.max, 'y', true);
+                        var zbottom = u.valToPos(z.min, 'y', true);
+                        ctx.fillStyle = z.color;
+                        ctx.fillRect(left, ztop, width, zbottom - ztop);
+                    }
+                    var lineColor = z.lineColor || z.color.replace(/[\d.]+\)$/, '0.7)');
+                    var vals = z.fill === false ? [z.value] : [z.min, z.max];
+                    vals.forEach(function(val) {
+                        if (val === undefined || drawn[val]) return;
+                        drawn[val] = true;
+                        var py = u.valToPos(val, 'y', true);
+                        ctx.beginPath();
+                        ctx.setLineDash([6 * dpr, 4 * dpr]);
+                        ctx.strokeStyle = lineColor;
+                        ctx.lineWidth = 1 * dpr;
+                        ctx.moveTo(left, py);
+                        ctx.lineTo(left + width, py);
+                        ctx.stroke();
+                    });
+                });
+                ctx.restore();
+            }]
+        }
+    };
+}
+
+/* ── Tooltip Plugin ── */
+function tooltipPlugin(labels, tooltipLabelCallback) {
+    var tooltip;
+    function init(u) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'uplot-tooltip';
+        tooltip.style.display = 'none';
+        u.over.appendChild(tooltip);
+    }
+    function buildLine(color, text) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:6px;';
+        var marker = document.createElement('span');
+        marker.style.cssText = 'width:10px;height:3px;display:inline-block;border-radius:1px;background:' + color;
+        var label = document.createElement('span');
+        label.textContent = text;
+        row.appendChild(marker);
+        row.appendChild(label);
+        return row;
+    }
+    function setCursor(u) {
+        var idx = u.cursor.idx;
+        if (idx == null) {
+            tooltip.style.display = 'none';
+            return;
+        }
+        var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        tooltip.textContent = '';
+        var header = document.createElement('div');
+        header.style.cssText = 'font-weight:600;margin-bottom:4px;';
+        header.textContent = labels[idx] || '';
+        tooltip.appendChild(header);
+        for (var i = 1; i < u.series.length; i++) {
+            var s = u.series[i];
+            if (!s.show) continue;
+            var val = u.data[i][idx];
+            if (val == null) continue;
+            var color = s._stroke || s.stroke;
+            if (typeof color === 'function') color = color(u, i);
+            var text;
+            if (tooltipLabelCallback) {
+                text = tooltipLabelCallback({
+                    raw: val,
+                    parsed: {y: val},
+                    dataset: {label: s.label, yAxisID: s._docsightAxisID},
+                    dataIndex: idx
+                });
+            } else {
+                text = s.label + ': ' + (typeof val === 'number' ? val.toFixed(2) : val);
+            }
+            tooltip.appendChild(buildLine(color, text));
+        }
+        tooltip.style.display = 'block';
+        tooltip.style.background = isDark ? '#16213e' : '#fff';
+        tooltip.style.color = isDark ? '#888' : '#666';
+        tooltip.style.border = '1px solid ' + (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)');
+
+        var left = u.cursor.left;
+        var top = u.cursor.top;
+        var tw = tooltip.offsetWidth;
+        var th = tooltip.offsetHeight;
+        var plotW = u.over.offsetWidth;
+        var plotH = u.over.offsetHeight;
+        var x = left + 12;
+        var y = top - th - 8;
+        if (x + tw > plotW) x = left - tw - 12;
+        if (y < 0) y = top + 12;
+        if (y + th > plotH) y = plotH - th - 4;
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+    }
+    return {
+        hooks: {
+            init: [init],
+            setCursor: [setCursor]
+        }
+    };
+}
+
+/* ── Helper: prepare uPlot container from canvas/div element ── */
+function prepareContainer(canvasId) {
+    var el = document.getElementById(canvasId);
+    if (!el) return null;
+    var container;
+    if (el.tagName === 'CANVAS') {
+        container = document.createElement('div');
+        container.id = canvasId;
+        container.style.width = '100%';
+        el.parentNode.replaceChild(container, el);
+    } else {
+        container = el;
+        container.textContent = '';
+        container.style.width = '100%';
+    }
+    return container;
+}
+
 /* ── Render Chart ── */
 function renderChart(canvasId, labels, datasets, type, zones, opts) {
-    if (charts[canvasId]) charts[canvasId].destroy();
-    var ctx = document.getElementById(canvasId);
-    if (!ctx) return;
+    if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+    var container = prepareContainer(canvasId);
+    if (!container) return;
+
     var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
     var gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
     var textColor = isDark ? '#888' : '#666';
+    var isBar = type === 'bar';
+    var n = labels.length;
 
-    var chartDatasets = datasets.map(function(ds, idx) {
-        var r = {
-            label: ds.label, data: ds.data,
-            borderColor: type === 'bar' ? ds.color : (ds.color || 'rgba(168,85,247,0.9)'),
-            backgroundColor: type === 'bar' ? ds.color + 'cc' : 'transparent',
-            borderWidth: type === 'bar' ? 3 : 2,
-            tension: type === 'bar' ? 0 : 0.4,
-            pointRadius: labels.length > 30 ? 0 : 3,
-            fill: false
+    /* Build columnar data: [xIndices, series1, series2, ...] */
+    var xData = [];
+    for (var xi = 0; xi < n; xi++) xData.push(xi);
+    var uData = [xData];
+    var allDatasets = datasets.slice();
+
+    /* Temperature overlay */
+    var tempData = opts && opts.tempData && _tempOverlayVisible ? opts.tempData : null;
+    var hasTemp = tempData && tempData.some(function(v) { return v !== null; }) && !isBar;
+
+    allDatasets.forEach(function(ds) { uData.push(ds.data); });
+    if (hasTemp) uData.push(tempData);
+
+    /* Series config */
+    var uSeries = [{ label: 'X', value: function(u, v) { return labels[v] || ''; } }];
+
+    /* Determine bar path renderer */
+    var barPaths = isBar ? uPlot.paths.bars({size: [0.7, 50], gap: 1}) : null;
+
+    allDatasets.forEach(function(ds) {
+        var s = {
+            label: ds.label,
+            stroke: ds.color || 'rgba(168,85,247,0.9)',
+            width: isBar ? 0 : 2,
+            fill: isBar ? (ds.color || '#a855f7') + 'cc' : undefined,
+            points: { show: n <= 30 && !isBar, size: 6 },
+            spanGaps: ds.spanGaps !== undefined ? ds.spanGaps : false
         };
-        if (ds.stepped) { r.stepped = 'before'; r.tension = 0; }
-        if (ds.dashed) { r.borderDash = [5, 5]; }
-        if (ds.spanGaps !== undefined) { r.spanGaps = ds.spanGaps; }
-        return r;
+        if (isBar) {
+            s.paths = barPaths;
+            s.points = { show: false };
+        }
+        if (ds.stepped) {
+            s.paths = uPlot.paths.stepped({ align: -1 });
+            s.width = 2;
+        }
+        if (ds.dashed) {
+            s.dash = [5, 5];
+        }
+        uSeries.push(s);
     });
 
-    /* Temperature overlay dataset */
-    var tempData = opts && opts.tempData && _tempOverlayVisible ? opts.tempData : null;
-    var hasTemp = tempData && tempData.some(function(v) { return v !== null; });
-    if (hasTemp && type !== 'bar') {
-        chartDatasets.push({
+    if (hasTemp) {
+        var tempSeries = {
             label: T.temperature || 'Temperature',
-            data: tempData,
-            borderColor: 'rgba(249,115,22,0.7)',
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            borderDash: [5, 3],
-            tension: 0.4,
-            pointRadius: 0,
-            yAxisID: 'y-temp',
-            fill: false,
+            stroke: 'rgba(249,115,22,0.7)',
+            width: 1.5,
+            dash: [5, 3],
+            scale: 'temp',
+            points: { show: false },
             spanGaps: true
-        });
+        };
+        tempSeries._docsightAxisID = 'y-temp';
+        uSeries.push(tempSeries);
     }
 
-    var hasLegend = chartDatasets.length > 1;
-    var legendPos = hasLegend ? 'bottom' : 'top';
-    var tooltipCallbacks = {};
+    /* Tooltip callback */
+    var tooltipLabelCallback = null;
     if (opts && opts.tooltipLabelCallback) {
-        tooltipCallbacks.label = opts.tooltipLabelCallback;
+        tooltipLabelCallback = opts.tooltipLabelCallback;
     } else if (hasTemp) {
-        tooltipCallbacks.label = function(context) {
-            var val = context.parsed.y;
+        tooltipLabelCallback = function(ctx) {
+            var val = ctx.parsed.y;
             if (val == null) return '';
-            if (context.dataset.yAxisID === 'y-temp') {
-                return context.dataset.label + ': ' + val.toFixed(1) + ' °C';
-            }
-            return context.dataset.label + ': ' + val;
-        };
-    }
-    var chartConfig = {
-        type: type || 'line',
-        data: { labels: labels, datasets: chartDatasets },
-        options: {
-            responsive: true, maintainAspectRatio: true,
-            interaction: { intersect: false, mode: 'index' },
-            plugins: {
-                legend: { display: hasLegend, position: legendPos, labels: { color: textColor, font: { size: 11 } } },
-                tooltip: { backgroundColor: isDark ? '#16213e' : '#fff', titleColor: textColor, bodyColor: textColor, borderColor: gridColor, borderWidth: 1,
-                    callbacks: Object.keys(tooltipCallbacks).length > 0 ? tooltipCallbacks : undefined }
-            },
-            scales: {
-                x: { ticks: { color: textColor, font: { size: 10 }, maxRotation: 45 }, grid: { color: gridColor } },
-                y: { ticks: { color: textColor, font: { size: 10 }, callback: opts && opts.yTickCallback ? opts.yTickCallback : undefined }, grid: { color: gridColor } }
-            }
-        },
-        plugins: zones ? [zonesPlugin] : []
-    };
-
-    /* Secondary temperature Y-axis */
-    if (hasTemp && type !== 'bar') {
-        chartConfig.options.scales['y-temp'] = {
-            type: 'linear', position: 'right',
-            title: { display: true, text: '°C', color: 'rgba(249,115,22,0.8)', font: { size: 10 } },
-            grid: { display: false },
-            ticks: { color: 'rgba(249,115,22,0.6)', font: { size: 10 } }
+            if (ctx.dataset.yAxisID === 'y-temp') return ctx.dataset.label + ': ' + val.toFixed(1) + ' °C';
+            return ctx.dataset.label + ': ' + val;
         };
     }
 
-    if (opts && opts.yMin !== undefined) chartConfig.options.scales.y.min = opts.yMin;
-    if (opts && opts.yMax !== undefined) chartConfig.options.scales.y.max = opts.yMax;
-    if (opts && opts.yAfterBuildTicks) chartConfig.options.scales.y.afterBuildTicks = opts.yAfterBuildTicks;
+    /* Scales */
+    var yRange = [null, null];
     if (zones) {
         var zoneMeta = zones.find(function(z) { return z.yMin !== undefined; });
         if (zoneMeta) {
-            chartConfig.options.scales.y.suggestedMin = zoneMeta.yMin;
-            chartConfig.options.scales.y.suggestedMax = zoneMeta.yMax;
+            yRange = [zoneMeta.yMin, zoneMeta.yMax];
         }
     }
-    charts[canvasId] = new Chart(ctx, chartConfig);
-    if (zones) {
-        charts[canvasId]._docsightZones = zones;
+    if (opts && opts.yMin !== undefined) yRange[0] = opts.yMin;
+    if (opts && opts.yMax !== undefined) yRange[1] = opts.yMax;
+
+    var scales = {
+        x: { time: false, range: function() { return [-0.5, n - 0.5]; } },
+        y: {}
+    };
+    if (yRange[0] !== null && yRange[1] !== null) {
+        scales.y.range = function(u, dmin, dmax) {
+            var lo = yRange[0] !== null ? yRange[0] : dmin;
+            var hi = yRange[1] !== null ? yRange[1] : dmax;
+            if (dmin < lo) lo = dmin;
+            if (dmax > hi) hi = dmax;
+            return [lo, hi];
+        };
     }
-    /* Store render params so the zoom modal can re-render this chart */
-    charts[canvasId]._docsightParams = {labels: labels, datasets: datasets, type: type, zones: zones, opts: opts};
+    if (hasTemp) {
+        scales.temp = {};
+    }
+
+    /* Axes */
+    var xTickValues = function(u, splits) {
+        var maxTicks = Math.floor(container.offsetWidth / 70);
+        if (maxTicks < 2) maxTicks = 2;
+        var step = Math.ceil(n / maxTicks);
+        return splits.filter(function(v) { return v >= 0 && v < n && v % step === 0; });
+    };
+
+    var axes = [
+        {
+            scale: 'x',
+            space: 60,
+            splits: function(u) {
+                var out = [];
+                for (var i = 0; i < n; i++) out.push(i);
+                return out;
+            },
+            filter: xTickValues,
+            values: function(u, vals) { return vals.map(function(v) { return labels[v] || ''; }); },
+            stroke: textColor,
+            grid: { stroke: gridColor, width: 1 },
+            ticks: { stroke: gridColor, width: 1 },
+            font: '10px system-ui',
+            rotate: -45,
+            gap: 4
+        },
+        {
+            scale: 'y',
+            stroke: textColor,
+            grid: { stroke: gridColor, width: 1 },
+            ticks: { stroke: gridColor, width: 1 },
+            font: '10px system-ui',
+            size: 50,
+            gap: 4
+        }
+    ];
+
+    /* Custom y-axis tick labels (e.g., QAM modulation) */
+    if (opts && opts.yTickCallback) {
+        var origTickCb = opts.yTickCallback;
+        axes[1].values = function(u, vals) {
+            return vals.map(function(v) { return origTickCb(v) || ''; });
+        };
+    }
+
+    /* Custom tick generation (e.g., fixed QAM steps) */
+    if (opts && opts.yAfterBuildTicks) {
+        var fakeTicks = [];
+        opts.yAfterBuildTicks({ ticks: fakeTicks });
+        if (fakeTicks.length > 0) {
+            axes[1].splits = function() {
+                return fakeTicks.map(function(t) { return t.value; });
+            };
+        }
+    }
+
+    /* Temperature axis (right side) */
+    if (hasTemp) {
+        axes.push({
+            scale: 'temp',
+            side: 1,
+            stroke: 'rgba(249,115,22,0.6)',
+            grid: { show: false },
+            ticks: { stroke: 'rgba(249,115,22,0.3)', width: 1 },
+            font: '10px system-ui',
+            size: 40,
+            gap: 4,
+            values: function(u, vals) { return vals.map(function(v) { return v.toFixed(0) + '°'; }); }
+        });
+    }
+
+    /* Sync crosshairs for trend charts */
+    var isTrendChart = ['chart-ds-power', 'chart-ds-snr', 'chart-us-power', 'chart-errors'].indexOf(canvasId) >= 0;
+    var cursor = {
+        show: true,
+        x: true,
+        y: false,
+        points: { show: false }
+    };
+    if (isTrendChart) {
+        cursor.sync = { key: 'docsight-trends', setSeries: false };
+    }
+
+    /* Plugins */
+    var plugins = [tooltipPlugin(labels, tooltipLabelCallback)];
+    if (zones) plugins.push(zonesPlugin(zones));
+
+    /* Build options */
+    var width = container.offsetWidth || 400;
+    var height = Math.round(width * 0.55);
+    if (height < 180) height = 180;
+    if (height > 350) height = 350;
+
+    var uOpts = {
+        width: width,
+        height: height,
+        scales: scales,
+        axes: axes,
+        series: uSeries,
+        cursor: cursor,
+        legend: { show: allDatasets.length + (hasTemp ? 1 : 0) > 1, live: false },
+        plugins: plugins
+    };
+
+    var chart = new uPlot(uOpts, uData, container);
+    charts[canvasId] = chart;
+    chart._docsightParams = {labels: labels, datasets: datasets, type: type, zones: zones, opts: opts};
+
+    /* Responsive resize */
+    var resizeObserver = new ResizeObserver(function(entries) {
+        var entry = entries[0];
+        var w = Math.round(entry.contentRect.width);
+        if (w > 0 && Math.abs(w - chart.width) > 5) {
+            var h = Math.round(w * 0.55);
+            if (h < 180) h = 180;
+            if (h > 350) h = 350;
+            chart.setSize({width: w, height: h});
+        }
+    });
+    resizeObserver.observe(container);
+    chart._docsightResizeObs = resizeObserver;
+
+    /* Patch destroy to cleanup observer */
+    var origDestroy = chart.destroy.bind(chart);
+    chart.destroy = function() {
+        if (chart._docsightResizeObs) { chart._docsightResizeObs.disconnect(); chart._docsightResizeObs = null; }
+        origDestroy();
+    };
 }
 
 /* ── Chart Zoom Modal ── */
@@ -197,117 +432,179 @@ function openChartZoom(canvasId) {
     var src = charts[canvasId];
     if (!src || !src._docsightParams) return;
     var params = src._docsightParams;
-    var card = document.getElementById(canvasId).closest('.chart-card');
+    var srcEl = document.getElementById(canvasId);
+    var card = srcEl ? srcEl.closest('.chart-card') : null;
     var label = card ? card.querySelector('.chart-label') : null;
     document.getElementById('chart-zoom-title').textContent = label ? label.textContent : '';
     var overlay = document.getElementById('chart-zoom-overlay');
     overlay.classList.add('open');
-    /* Re-render the chart on the modal canvas (maintainAspectRatio: false to fill) */
+
     setTimeout(function() {
         if (zoomChart) { zoomChart.destroy(); zoomChart = null; }
-        var ctx = document.getElementById('chart-zoom-canvas');
+        var zoomContainer = document.getElementById('chart-zoom-canvas');
+        if (!zoomContainer) return;
+        zoomContainer.textContent = '';
         var isDark = document.documentElement.getAttribute('data-theme') !== 'light';
         var gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
         var textColor = isDark ? '#888' : '#666';
-
+        var isBar = params.type === 'bar';
+        var n = params.labels.length;
         var isMulti = params.datasets.length > 1;
-        var chartDatasets = params.datasets.map(function(ds) {
-            var lineColor = ds.color || 'rgba(168,85,247,0.9)';
-            var r = {
-                label: ds.label, data: ds.data,
-                borderColor: params.type === 'bar' ? ds.color : lineColor,
-                backgroundColor: params.type === 'bar' ? ds.color + 'cc' : (isMulti ? 'transparent' : function(context) {
-                    var chart = context.chart;
-                    var ctx = chart.ctx;
-                    var chartArea = chart.chartArea;
-                    if (!chartArea) return 'rgba(168,85,247,0.25)';
-                    var gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                    gradient.addColorStop(0, 'rgba(168,85,247,0.5)');
-                    gradient.addColorStop(0.7, 'rgba(168,85,247,0.1)');
-                    gradient.addColorStop(1, 'rgba(168,85,247,0)');
-                    return gradient;
-                }),
-                borderWidth: params.type === 'bar' ? 3 : 2,
-                tension: params.type === 'bar' ? 0.3 : 0.4,
-                pointRadius: params.labels.length > 30 ? 2 : 4,
-                fill: isMulti ? false : params.type !== 'bar'
+
+        /* Build data */
+        var xData = [];
+        for (var xi = 0; xi < n; xi++) xData.push(xi);
+        var uData = [xData];
+        params.datasets.forEach(function(ds) { uData.push(ds.data); });
+
+        var zoomTempData = params.opts && params.opts.tempData && _tempOverlayVisible ? params.opts.tempData : null;
+        var zoomHasTemp = zoomTempData && zoomTempData.some(function(v) { return v !== null; }) && !isBar;
+        if (zoomHasTemp) uData.push(zoomTempData);
+
+        /* Series */
+        var barPaths = isBar ? uPlot.paths.bars({size: [0.7, 50], gap: 1}) : null;
+        var uSeries = [{ label: 'X', value: function(u, v) { return params.labels[v] || ''; } }];
+        params.datasets.forEach(function(ds) {
+            var s = {
+                label: ds.label,
+                stroke: ds.color || 'rgba(168,85,247,0.9)',
+                width: isBar ? 0 : 2,
+                fill: isBar ? (ds.color || '#a855f7') + 'cc' : (!isMulti && !isBar ? 'rgba(168,85,247,0.15)' : undefined),
+                points: { show: n <= 30 && !isBar, size: isBar ? 0 : (n > 30 ? 4 : 8) },
+                spanGaps: ds.spanGaps !== undefined ? ds.spanGaps : false
             };
-            if (ds.stepped) { r.stepped = 'before'; r.tension = 0; }
-            if (ds.dashed) { r.borderDash = [5, 5]; }
-            return r;
+            if (isBar) { s.paths = barPaths; s.points = { show: false }; }
+            if (ds.stepped) { s.paths = uPlot.paths.stepped({ align: -1 }); s.width = 2; }
+            if (ds.dashed) { s.dash = [5, 5]; }
+            uSeries.push(s);
         });
 
-        /* Temperature overlay in zoom modal */
-        var zoomTempData = params.opts && params.opts.tempData && _tempOverlayVisible ? params.opts.tempData : null;
-        var zoomHasTemp = zoomTempData && zoomTempData.some(function(v) { return v !== null; });
-        if (zoomHasTemp && params.type !== 'bar') {
-            chartDatasets.push({
+        if (zoomHasTemp) {
+            var ts = {
                 label: T.temperature || 'Temperature',
-                data: zoomTempData,
-                borderColor: 'rgba(249,115,22,0.7)',
-                backgroundColor: 'transparent',
-                borderWidth: 1.5,
-                borderDash: [5, 3],
-                tension: 0.4,
-                pointRadius: params.labels.length > 30 ? 0 : 2,
-                yAxisID: 'y-temp',
-                fill: false,
+                stroke: 'rgba(249,115,22,0.7)',
+                width: 1.5,
+                dash: [5, 3],
+                scale: 'temp',
+                points: { show: n <= 30, size: 4 },
                 spanGaps: true
+            };
+            ts._docsightAxisID = 'y-temp';
+            uSeries.push(ts);
+        }
+
+        /* Tooltip callback */
+        var zoomTooltipCb = null;
+        if (params.opts && params.opts.tooltipLabelCallback) {
+            zoomTooltipCb = params.opts.tooltipLabelCallback;
+        } else if (zoomHasTemp) {
+            zoomTooltipCb = function(ctx) {
+                var val = ctx.parsed.y;
+                if (val == null) return '';
+                if (ctx.dataset.yAxisID === 'y-temp') return ctx.dataset.label + ': ' + val.toFixed(1) + ' °C';
+                return ctx.dataset.label + ': ' + val;
+            };
+        }
+
+        /* Scales */
+        var yRange = [null, null];
+        if (params.zones) {
+            var zoneMeta = params.zones.find(function(z) { return z.yMin !== undefined; });
+            if (zoneMeta) { yRange = [zoneMeta.yMin, zoneMeta.yMax]; }
+        }
+        if (params.opts && params.opts.yMin !== undefined) yRange[0] = params.opts.yMin;
+        if (params.opts && params.opts.yMax !== undefined) yRange[1] = params.opts.yMax;
+
+        var scales = {
+            x: { time: false, range: function() { return [-0.5, n - 0.5]; } },
+            y: {}
+        };
+        if (yRange[0] !== null && yRange[1] !== null) {
+            scales.y.range = function(u, dmin, dmax) {
+                var lo = yRange[0] !== null ? yRange[0] : dmin;
+                var hi = yRange[1] !== null ? yRange[1] : dmax;
+                if (dmin < lo) lo = dmin;
+                if (dmax > hi) hi = dmax;
+                return [lo, hi];
+            };
+        }
+        if (zoomHasTemp) { scales.temp = {}; }
+
+        /* Axes */
+        var xTickValues = function(u, splits) {
+            var maxTicks = Math.floor(zoomContainer.offsetWidth / 80);
+            if (maxTicks < 2) maxTicks = 2;
+            var step = Math.ceil(n / maxTicks);
+            return splits.filter(function(v) { return v >= 0 && v < n && v % step === 0; });
+        };
+        var axes = [
+            {
+                scale: 'x',
+                space: 70,
+                splits: function() { var o = []; for (var i = 0; i < n; i++) o.push(i); return o; },
+                filter: xTickValues,
+                values: function(u, vals) { return vals.map(function(v) { return params.labels[v] || ''; }); },
+                stroke: textColor,
+                grid: { stroke: gridColor, width: 1 },
+                ticks: { stroke: gridColor, width: 1 },
+                font: '11px system-ui',
+                rotate: -45,
+                gap: 4
+            },
+            {
+                scale: 'y',
+                stroke: textColor,
+                grid: { stroke: gridColor, width: 1 },
+                ticks: { stroke: gridColor, width: 1 },
+                font: '11px system-ui',
+                size: 55,
+                gap: 4
+            }
+        ];
+        if (params.opts && params.opts.yTickCallback) {
+            var cb = params.opts.yTickCallback;
+            axes[1].values = function(u, vals) { return vals.map(function(v) { return cb(v) || ''; }); };
+        }
+        if (params.opts && params.opts.yAfterBuildTicks) {
+            var ft = [];
+            params.opts.yAfterBuildTicks({ ticks: ft });
+            if (ft.length > 0) {
+                axes[1].splits = function() { return ft.map(function(t) { return t.value; }); };
+            }
+        }
+        if (zoomHasTemp) {
+            axes.push({
+                scale: 'temp', side: 1,
+                stroke: 'rgba(249,115,22,0.6)',
+                grid: { show: false },
+                ticks: { stroke: 'rgba(249,115,22,0.3)', width: 1 },
+                font: '11px system-ui',
+                size: 45,
+                gap: 4,
+                values: function(u, vals) { return vals.map(function(v) { return v.toFixed(0) + '°'; }); }
             });
         }
 
-        var hasLegend = chartDatasets.length > 1;
-        var zoomTooltipCallbacks = {};
-        if (params.opts && params.opts.tooltipLabelCallback) {
-            zoomTooltipCallbacks.label = params.opts.tooltipLabelCallback;
-        } else if (zoomHasTemp) {
-            zoomTooltipCallbacks.label = function(context) {
-                var val = context.parsed.y;
-                if (val == null) return '';
-                if (context.dataset.yAxisID === 'y-temp') return context.dataset.label + ': ' + val.toFixed(1) + ' °C';
-                return context.dataset.label + ': ' + val;
-            };
-        }
-        var cfg = {
-            type: params.type || 'line',
-            data: { labels: params.labels, datasets: chartDatasets },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { intersect: false, mode: 'index' },
-                plugins: {
-                    legend: { display: hasLegend, position: 'bottom', labels: { color: textColor, font: { size: 12 } } },
-                    tooltip: { backgroundColor: isDark ? '#16213e' : '#fff', titleColor: textColor, bodyColor: textColor, borderColor: gridColor, borderWidth: 1,
-                        callbacks: Object.keys(zoomTooltipCallbacks).length > 0 ? zoomTooltipCallbacks : undefined }
-                },
-                scales: {
-                    x: { ticks: { color: textColor, font: { size: 11 }, maxRotation: 45 }, grid: { color: gridColor } },
-                    y: { ticks: { color: textColor, font: { size: 11 }, callback: params.opts && params.opts.yTickCallback ? params.opts.yTickCallback : undefined }, grid: { color: gridColor } }
-                }
-            },
-            plugins: params.zones ? [zonesPlugin] : []
+        /* Plugins */
+        var plugins = [tooltipPlugin(params.labels, zoomTooltipCb)];
+        if (params.zones) plugins.push(zonesPlugin(params.zones));
+
+        var w = zoomContainer.offsetWidth || 800;
+        var h = zoomContainer.offsetHeight || 500;
+        if (h < 300) h = 300;
+
+        var uOpts = {
+            width: w,
+            height: h,
+            scales: scales,
+            axes: axes,
+            series: uSeries,
+            cursor: { show: true, x: true, y: false, points: { show: false } },
+            legend: { show: params.datasets.length > 1 || zoomHasTemp, live: false },
+            plugins: plugins
         };
-        if (zoomHasTemp && params.type !== 'bar') {
-            cfg.options.scales['y-temp'] = {
-                type: 'linear', position: 'right',
-                title: { display: true, text: '°C', color: 'rgba(249,115,22,0.8)', font: { size: 11 } },
-                grid: { display: false },
-                ticks: { color: 'rgba(249,115,22,0.6)', font: { size: 11 } }
-            };
-        }
-        if (params.opts && params.opts.yMin !== undefined) cfg.options.scales.y.min = params.opts.yMin;
-        if (params.opts && params.opts.yMax !== undefined) cfg.options.scales.y.max = params.opts.yMax;
-        if (params.opts && params.opts.yAfterBuildTicks) cfg.options.scales.y.afterBuildTicks = params.opts.yAfterBuildTicks;
-        if (params.zones) {
-            var zoneMeta = params.zones.find(function(z) { return z.yMin !== undefined; });
-            if (zoneMeta) {
-                cfg.options.scales.y.suggestedMin = zoneMeta.yMin;
-                cfg.options.scales.y.suggestedMax = zoneMeta.yMax;
-            }
-        }
-        zoomChart = new Chart(ctx, cfg);
-        if (params.zones) {
-            zoomChart._docsightZones = params.zones;
-        }
+
+        zoomChart = new uPlot(uOpts, uData, zoomContainer);
     }, 50);
 }
 

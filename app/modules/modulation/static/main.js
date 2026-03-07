@@ -198,9 +198,11 @@ function renderProtocolGroups(data) {
         barHeader.appendChild(barContent);
         barCard.appendChild(barHeader);
         var barWrap = _el('div', 'modulation-chart-wrap');
-        var barCanvas = document.createElement('canvas');
-        barCanvas.id = 'mod-dist-chart-' + idx;
-        barWrap.appendChild(barCanvas);
+        var barDiv = document.createElement('div');
+        barDiv.id = 'mod-dist-chart-' + idx;
+        barDiv.style.width = '100%';
+        barDiv.style.height = '100%';
+        barWrap.appendChild(barDiv);
         barCard.appendChild(barWrap);
         chartsGrid.appendChild(barCard);
 
@@ -213,9 +215,11 @@ function renderProtocolGroups(data) {
         trendHeader.appendChild(trendContent);
         trendCard.appendChild(trendHeader);
         var trendWrap = _el('div', 'modulation-chart-wrap');
-        var trendCanvas = document.createElement('canvas');
-        trendCanvas.id = 'mod-trend-chart-' + idx;
-        trendWrap.appendChild(trendCanvas);
+        var trendDiv = document.createElement('div');
+        trendDiv.id = 'mod-trend-chart-' + idx;
+        trendDiv.style.width = '100%';
+        trendDiv.style.height = '100%';
+        trendWrap.appendChild(trendDiv);
         trendCard.appendChild(trendWrap);
         chartsGrid.appendChild(trendCard);
 
@@ -238,11 +242,14 @@ function _buildMiniKPI(label, value, cls) {
 }
 
 function renderGroupDistChart(pg, idx) {
-    var ctx = document.getElementById('mod-dist-chart-' + idx);
-    if (!ctx) return;
+    var container = document.getElementById('mod-dist-chart-' + idx);
+    if (!container) return;
+    container.textContent = '';
 
     var days = pg.days || [];
     var labels = days.map(function(d) { return d.date; });
+    var n = labels.length;
+    var textColor = _cssVar('--text-secondary') || '#9ca3af';
 
     var allMods = {};
     days.forEach(function(d) {
@@ -252,120 +259,141 @@ function renderGroupDistChart(pg, idx) {
         return modSortOrder(a) - modSortOrder(b);
     });
 
-    var datasets = modKeys.map(function(mod) {
-        return {
+    /* uPlot stacked bars: build cumulative data per mod layer */
+    var xData = [];
+    for (var i = 0; i < n; i++) xData.push(i);
+    var uData = [xData];
+    var uSeries = [{ label: 'X', value: function(u, v) { return labels[v] || ''; } }];
+    var barPaths = uPlot.paths.bars({size: [0.7, 50], gap: 1});
+
+    /* For stacked bars, each series is the cumulative sum up to that layer */
+    var cumData = xData.map(function() { return 0; });
+    modKeys.forEach(function(mod) {
+        var raw = days.map(function(d) { return (d.distribution || {})[mod] || 0; });
+        var stacked = raw.map(function(v, j) { cumData[j] += v; return cumData[j]; });
+        uData.push(stacked);
+        uSeries.push({
             label: mod,
-            data: days.map(function(d) { return (d.distribution || {})[mod] || 0; }),
-            backgroundColor: QAM_COLORS[mod] || '#6b7280',
-            borderWidth: 0,
-            borderSkipped: false,
-            borderRadius: 2
-        };
+            stroke: QAM_COLORS[mod] || '#6b7280',
+            fill: QAM_COLORS[mod] || '#6b7280',
+            width: 0,
+            paths: barPaths,
+            points: { show: false }
+        });
     });
 
-    var chart = new Chart(ctx, {
-        type: 'bar',
-        data: { labels: labels, datasets: datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            onClick: function(evt, elements) {
-                if (elements.length > 0) {
-                    var index = elements[0].index;
-                    modDrillIntoDay(labels[index]);
-                }
+    var w = container.offsetWidth || 400;
+    var h = container.offsetHeight || 300;
+    var chart = new uPlot({
+        width: w,
+        height: h,
+        scales: {
+            x: { time: false, range: function() { return [-0.5, n - 0.5]; } },
+            y: { range: [0, 100] }
+        },
+        axes: [
+            {
+                scale: 'x',
+                splits: function() { return xData; },
+                values: function(u, vals) { return vals.map(function(v) { return labels[v] || ''; }); },
+                stroke: textColor,
+                grid: { show: false },
+                font: '10px system-ui',
+                gap: 4
             },
-            plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, color: _cssVar('--text') || '#e5e7eb' } },
-                tooltip: {
-                    callbacks: {
-                        label: function(c) { return c.dataset.label + ': ' + c.parsed.y.toFixed(1) + '%'; }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    stacked: true,
-                    grid: { display: false },
-                    ticks: { color: _cssVar('--text-secondary') || '#9ca3af' }
-                },
-                y: {
-                    stacked: true,
-                    min: 0, max: 100,
-                    ticks: {
-                        callback: function(v) { return v + '%'; },
-                        color: _cssVar('--text-secondary') || '#9ca3af'
-                    },
-                    grid: { color: 'rgba(255,255,255,0.06)' }
-                }
+            {
+                scale: 'y',
+                stroke: textColor,
+                grid: { stroke: 'rgba(255,255,255,0.06)', width: 1 },
+                values: function(u, vals) { return vals.map(function(v) { return v + '%'; }); },
+                font: '10px system-ui',
+                size: 40
             }
-        }
-    });
+        ],
+        series: uSeries,
+        cursor: { show: true, x: true, y: false, points: { show: false } },
+        legend: { show: true, live: false }
+    }, uData, container);
     _modCharts.push(chart);
 }
 
 function renderGroupTrendChart(pg, idx) {
-    var ctx = document.getElementById('mod-trend-chart-' + idx);
-    if (!ctx) return;
+    var container = document.getElementById('mod-trend-chart-' + idx);
+    if (!container) return;
+    container.textContent = '';
 
     var days = pg.days || [];
     var labels = days.map(function(d) { return d.date; });
+    var n = labels.length;
     var textColor = _cssVar('--text-secondary') || '#9ca3af';
 
-    var chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: T['docsight.modulation.health_index'] || 'Health Index',
-                    data: days.map(function(d) { return d.health_index; }),
-                    borderColor: '#22c55e',
-                    backgroundColor: 'rgba(34,197,94,0.1)',
-                    fill: true, tension: 0.3, yAxisID: 'y', pointRadius: 3
-                },
-                {
-                    label: T['docsight.modulation.low_qam_pct'] || 'Low-QAM %',
-                    data: days.map(function(d) { return d.low_qam_pct; }),
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239,68,68,0.1)',
-                    fill: true, tension: 0.3, yAxisID: 'y1', pointRadius: 3
-                }
-            ]
+    var xData = [];
+    for (var i = 0; i < n; i++) xData.push(i);
+
+    var w = container.offsetWidth || 400;
+    var h = container.offsetHeight || 300;
+    var chart = new uPlot({
+        width: w,
+        height: h,
+        scales: {
+            x: { time: false, range: function() { return [-0.5, n - 0.5]; } },
+            health: { range: [0, 100] },
+            lowqam: {}
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, color: textColor } },
-                tooltip: {
-                    callbacks: {
-                        label: function(c) {
-                            var suffix = c.datasetIndex === 0 ? '/100' : '%';
-                            var val = c.parsed.y;
-                            return c.dataset.label + ': ' + (val !== null ? val.toFixed(1) : '\u2014') + suffix;
-                        }
-                    }
-                }
+        axes: [
+            {
+                scale: 'x',
+                splits: function() { return xData; },
+                values: function(u, vals) { return vals.map(function(v) { return labels[v] || ''; }); },
+                stroke: textColor,
+                grid: { show: false },
+                font: '10px system-ui',
+                gap: 4
             },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: textColor } },
-                y: {
-                    type: 'linear', position: 'left', min: 0, max: 100,
-                    title: { display: true, text: T['docsight.modulation.health_index'] || 'Health Index', color: textColor },
-                    ticks: { color: textColor },
-                    grid: { color: 'rgba(255,255,255,0.06)' }
-                },
-                y1: {
-                    type: 'linear', position: 'right', min: 0,
-                    title: { display: true, text: T['docsight.modulation.low_qam_pct'] || 'Low-QAM %', color: textColor },
-                    ticks: { callback: function(v) { return v + '%'; }, color: textColor },
-                    grid: { drawOnChartArea: false }
-                }
+            {
+                scale: 'health',
+                side: 3,
+                stroke: '#22c55e',
+                grid: { stroke: 'rgba(255,255,255,0.06)', width: 1 },
+                font: '10px system-ui',
+                size: 40
+            },
+            {
+                scale: 'lowqam',
+                side: 1,
+                stroke: '#ef4444',
+                grid: { show: false },
+                values: function(u, vals) { return vals.map(function(v) { return v.toFixed(0) + '%'; }); },
+                font: '10px system-ui',
+                size: 40
             }
-        }
-    });
+        ],
+        series: [
+            { label: 'X', value: function(u, v) { return labels[v] || ''; } },
+            {
+                label: T['docsight.modulation.health_index'] || 'Health Index',
+                stroke: '#22c55e',
+                fill: 'rgba(34,197,94,0.1)',
+                width: 2,
+                scale: 'health',
+                points: { show: true, size: 6 }
+            },
+            {
+                label: T['docsight.modulation.low_qam_pct'] || 'Low-QAM %',
+                stroke: '#ef4444',
+                fill: 'rgba(239,68,68,0.1)',
+                width: 2,
+                scale: 'lowqam',
+                points: { show: true, size: 6 }
+            }
+        ],
+        cursor: { show: true, x: true, y: false, points: { show: false } },
+        legend: { show: true, live: false }
+    }, [
+        xData,
+        days.map(function(d) { return d.health_index; }),
+        days.map(function(d) { return d.low_qam_pct; })
+    ], container);
     _modCharts.push(chart);
 }
 
@@ -458,9 +486,11 @@ function renderIntraday(data) {
             if (ch.timeline && ch.timeline.length > 1) {
                 var chartWrap = _el('div', 'modulation-intraday-chart-wrap');
                 var canvasId = 'mod-intraday-ch-' + pg.docsis_version.replace('.', '') + '-' + ch.channel_id;
-                var canvas = document.createElement('canvas');
-                canvas.id = canvasId;
-                chartWrap.appendChild(canvas);
+                var chartDiv = document.createElement('div');
+                chartDiv.id = canvasId;
+                chartDiv.style.width = '100%';
+                chartDiv.style.height = '100%';
+                chartWrap.appendChild(chartDiv);
                 card.appendChild(chartWrap);
                 section.appendChild(card);
                 renderChannelTimeline(canvasId, ch.timeline);
@@ -474,59 +504,66 @@ function renderIntraday(data) {
 }
 
 function renderChannelTimeline(canvasId, timeline) {
-    var ctx = document.getElementById(canvasId);
-    if (!ctx) return;
+    var container = document.getElementById(canvasId);
+    if (!container) return;
+    container.textContent = '';
 
     var labels = timeline.map(function(t) { return t.time; });
     var dataPoints = timeline.map(function(t) { return modSortOrder(t.modulation); });
-    var bgColors = timeline.map(function(t) { return QAM_COLORS[t.modulation] || '#6b7280'; });
+    var n = labels.length;
+    var textColor = _cssVar('--text-secondary') || '#9ca3af';
+    var qamLabels = ['4QAM', '16QAM', '64QAM', '256QAM', '1024QAM', '4096QAM', 'OFDM', 'OFDMA', 'Unknown'];
 
-    var chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: dataPoints,
-                borderColor: bgColors,
-                backgroundColor: bgColors[0],
-                segment: {
-                    borderColor: function(c) { return bgColors[c.p0DataIndex] || '#6b7280'; }
-                },
-                stepped: true, fill: false, pointRadius: 4,
-                pointBackgroundColor: bgColors, borderWidth: 2
-            }]
+    var xData = [];
+    for (var i = 0; i < n; i++) xData.push(i);
+
+    var w = container.offsetWidth || 400;
+    var h = container.offsetHeight || 120;
+    var chart = new uPlot({
+        width: w,
+        height: h,
+        scales: {
+            x: { time: false, range: function() { return [-0.5, n - 0.5]; } },
+            y: { range: [-0.5, 8.5] }
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(c) { return timeline[c.dataIndex].modulation; }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { color: _cssVar('--text-secondary') || '#9ca3af', maxTicksLimit: 12 }
+        axes: [
+            {
+                scale: 'x',
+                splits: function() { return xData; },
+                filter: function(u, splits) {
+                    var max = Math.min(12, n);
+                    var step = Math.ceil(n / max);
+                    return splits.filter(function(v) { return v % step === 0; });
                 },
-                y: {
-                    min: -0.5, max: 8.5,
-                    ticks: {
-                        callback: function(v) {
-                            var l = ['4QAM', '16QAM', '64QAM', '256QAM', '1024QAM', '4096QAM', 'OFDM', 'OFDMA', 'Unknown'];
-                            return l[v] || '';
-                        },
-                        stepSize: 1,
-                        color: _cssVar('--text-secondary') || '#9ca3af'
-                    },
-                    grid: { color: 'rgba(255,255,255,0.04)' }
-                }
+                values: function(u, vals) { return vals.map(function(v) { return labels[v] || ''; }); },
+                stroke: textColor,
+                grid: { show: false },
+                font: '10px system-ui',
+                gap: 2
+            },
+            {
+                scale: 'y',
+                stroke: textColor,
+                grid: { stroke: 'rgba(255,255,255,0.04)', width: 1 },
+                splits: function() { return [0,1,2,3,4,5,6,7,8]; },
+                values: function(u, vals) { return vals.map(function(v) { return qamLabels[v] || ''; }); },
+                font: '10px system-ui',
+                size: 60
             }
-        }
-    });
+        ],
+        series: [
+            { label: 'X', value: function(u, v) { return labels[v] || ''; } },
+            {
+                label: 'Modulation',
+                stroke: '#ffab40',
+                width: 2,
+                paths: uPlot.paths.stepped({ align: -1 }),
+                points: { show: true, size: 8, stroke: '#ffab40', fill: '#ffab40' }
+            }
+        ],
+        cursor: { show: true, x: true, y: false, points: { show: false } },
+        legend: { show: false }
+    }, [xData, dataPoints], container);
     _modIntradayCharts.push(chart);
 }
 

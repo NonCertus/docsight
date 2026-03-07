@@ -15,7 +15,7 @@
 }
 .chart-zoom-modal .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .chart-zoom-modal .modal-header h2 { font-size: 1.1em; color: var(--accent); margin: 0; }
-.chart-zoom-modal canvas { flex: 1; min-height: 0; width: 100% !important; }
+.chart-zoom-modal > div:last-child { flex: 1; min-height: 0; width: 100%; overflow: hidden; }
 .no-data-msg {
     text-align: center; padding: 40px 20px;
     color: var(--muted); font-size: 0.95em;
