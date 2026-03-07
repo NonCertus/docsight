@@ -131,24 +131,33 @@ class SurfboardDriver(ModemDriver):
             raise RuntimeError(f"SURFboard login failed: {result}")
 
     def get_docsis_data(self) -> dict:
-        """Retrieve DOCSIS channel data via HNAP GetMultipleHNAPs."""
+        """Retrieve DOCSIS channel data via HNAP GetMultipleHNAPs.
+
+        Requests both GetMoto* and GetCustomer* action names so that
+        modems using either HNAP variant respond with channel data.
+        """
         body = {
             "GetMultipleHNAPs": {
                 "GetMotoStatusDownstreamChannelInfo": "",
                 "GetMotoStatusUpstreamChannelInfo": "",
+                "GetCustomerStatusDownstreamChannelInfo": "",
+                "GetCustomerStatusUpstreamChannelInfo": "",
             }
         }
         resp = self._hnap_post("GetMultipleHNAPs", body)
+        multi = resp.get("GetMultipleHNAPsResponse", {})
 
         ds_raw = (
-            resp.get("GetMultipleHNAPsResponse", {})
-            .get("GetMotoStatusDownstreamChannelInfoResponse", {})
+            multi.get("GetMotoStatusDownstreamChannelInfoResponse", {})
             .get("MotoConnDownstreamChannel", "")
+            or multi.get("GetCustomerStatusDownstreamChannelInfoResponse", {})
+            .get("CustomerConnDownstreamChannel", "")
         )
         us_raw = (
-            resp.get("GetMultipleHNAPsResponse", {})
-            .get("GetMotoStatusUpstreamChannelInfoResponse", {})
+            multi.get("GetMotoStatusUpstreamChannelInfoResponse", {})
             .get("MotoConnUpstreamChannel", "")
+            or multi.get("GetCustomerStatusUpstreamChannelInfoResponse", {})
+            .get("CustomerConnUpstreamChannel", "")
         )
 
         ds30, ds31 = self._parse_downstream(ds_raw)
@@ -160,26 +169,33 @@ class SurfboardDriver(ModemDriver):
         }
 
     def get_device_info(self) -> dict:
-        """Retrieve device model and firmware from HNAP."""
+        """Retrieve device model and firmware from HNAP.
+
+        Requests both GetMoto* and GetCustomer* action names to support
+        both HNAP variants.
+        """
         try:
             body = {
                 "GetMultipleHNAPs": {
                     "GetMotoStatusSoftware": "",
                     "GetMotoStatusStartupSequence": "",
+                    "GetCustomerStatusConnectionInfo": "",
                 }
             }
             resp = self._hnap_post("GetMultipleHNAPs", body)
             multi = resp.get("GetMultipleHNAPsResponse", {})
 
             sw = multi.get("GetMotoStatusSoftwareResponse", {})
-            status = sw.get("StatusSoftwareSpecVer", "")
+            cust = multi.get("GetCustomerStatusConnectionInfoResponse", {})
 
             model = ""
             hw_ver = sw.get("StatusSoftwareHdVer", "")
             if hw_ver:
                 model = hw_ver.split("-")[0].strip() if "-" in hw_ver else hw_ver
+            elif cust.get("StatusSoftwareModelName"):
+                model = cust["StatusSoftwareModelName"]
 
-            sw_ver = sw.get("StatusSoftwareSfVer", "")
+            sw_ver = sw.get("StatusSoftwareSfVer", "") or cust.get("StatusSoftwareSfVer", "")
 
             return {
                 "manufacturer": "Arris",
