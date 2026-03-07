@@ -48,7 +48,22 @@ class SurfboardDriver(ModemDriver):
         if url.startswith("http://"):
             url = "https://" + url[len("http://"):]
             log.info("SURFboard requires HTTPS, upgraded URL to %s", url)
+        # Strip trailing path (users sometimes enter .../Login.html)
+        url = url.rstrip("/")
+        from urllib.parse import urlparse, urlunparse
+        parsed = urlparse(url)
+        if parsed.path and parsed.path != "/":
+            url = urlunparse(parsed._replace(path=""))
+            log.info("SURFboard stripped path from URL: %s", url)
         super().__init__(url, user, password)
+        self._session = requests.Session()
+        self._session.verify = False
+        self._private_key = ""
+        self._cookie = ""
+
+    def _fresh_session(self) -> None:
+        """Reset HTTP session to clear stale cookies/state."""
+        self._session.close()
         self._session = requests.Session()
         self._session.verify = False
         self._private_key = ""
@@ -57,21 +72,25 @@ class SurfboardDriver(ModemDriver):
     def login(self) -> None:
         """Two-phase HNAP login with HMAC-SHA256.
 
-        Retries once with a fresh session on ConnectionError.
+        Retries once with a fresh session on ConnectionError or when the
+        modem returns no challenge (stale session / concurrent login).
         """
         for attempt in range(2):
             try:
+                self._fresh_session()
                 self._do_login()
                 log.info("SURFboard HNAP login OK")
                 return
             except requests.ConnectionError:
                 if attempt == 0:
                     log.warning("SURFboard connection lost, retrying with fresh session")
-                    self._session.close()
-                    self._session = requests.Session()
-                    self._session.verify = False
                     continue
                 raise RuntimeError("SURFboard login failed: connection refused after retry")
+            except RuntimeError as e:
+                if "no challenge received" in str(e) and attempt == 0:
+                    log.warning("SURFboard no challenge received, retrying with fresh session")
+                    continue
+                raise
             except requests.RequestException as e:
                 raise RuntimeError(f"SURFboard login failed: {e}")
 
@@ -95,6 +114,7 @@ class SurfboardDriver(ModemDriver):
         public_key = login_resp.get("PublicKey", "")
 
         if not challenge or not public_key:
+            log.debug("HNAP login response: %s", login_resp)
             raise RuntimeError("SURFboard login failed: no challenge received")
 
         # Derive keys
