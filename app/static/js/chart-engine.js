@@ -7,6 +7,19 @@ var _tempOverlayVisible = true;
 var currentView = 'live';
 
 /* ── Shared Helpers ── */
+function fmtK(v) {
+    if (v == null) return '';
+    var abs = Math.abs(v);
+    if (abs >= 1000000) {
+        var m = v / 1000000;
+        return (m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)) + 'M';
+    }
+    if (abs >= 1000) {
+        var k = v / 1000;
+        return (k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)) + 'k';
+    }
+    return '' + v;
+}
 function todayStr() {
     var d = new Date();
     return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
@@ -137,7 +150,7 @@ function tooltipPlugin(labels, tooltipLabelCallback) {
                     dataIndex: idx
                 });
             } else {
-                text = s.label + ': ' + (typeof val === 'number' ? val.toFixed(2) : val);
+                text = s.label + ': ' + (typeof val === 'number' ? (val === Math.floor(val) && Math.abs(val) >= 1000 ? fmtK(val) : val.toFixed(2)) : val);
             }
             tooltip.appendChild(buildLine(color, text));
         }
@@ -335,6 +348,19 @@ function renderChart(canvasId, labels, datasets, type, zones, opts) {
         axes[1].values = function(u, vals) {
             return vals.map(function(v) { return origTickCb(v) || ''; });
         };
+    }
+
+    /* Auto-format Y-axis with k/M when values are large (error counts) */
+    if (!zones && !(opts && opts.yTickCallback)) {
+        var maxVal = 0;
+        allDatasets.forEach(function(ds) {
+            ds.data.forEach(function(v) { if (v != null && Math.abs(v) > maxVal) maxVal = Math.abs(v); });
+        });
+        if (maxVal >= 1000) {
+            axes[1].values = function(u, vals) {
+                return vals.map(function(v) { return fmtK(v); });
+            };
+        }
     }
 
     /* Custom tick generation (e.g., fixed QAM steps) */
