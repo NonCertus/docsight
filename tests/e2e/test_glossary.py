@@ -71,15 +71,11 @@ class TestGlossaryChannels:
     """Verify glossary hints in channel tables."""
 
     def test_ds_channel_group_has_glossary_hint(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="channels"]').click()
-        demo_page.wait_for_timeout(500)
-        hint = demo_page.locator('#view-channels .docsis-group-header .glossary-hint').first
+        hint = demo_page.locator('#view-dashboard .docsis-group-header .glossary-hint').first
         expect(hint).to_be_visible()
 
     def test_channel_glossary_popover_works(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="channels"]').click()
-        demo_page.wait_for_timeout(500)
-        hint = demo_page.locator('#view-channels .docsis-group-header .glossary-hint').first
+        hint = demo_page.locator('#view-dashboard .docsis-group-header .glossary-hint').first
         hint.click()
         popover = hint.locator('.glossary-popover')
         expect(popover).to_be_visible()

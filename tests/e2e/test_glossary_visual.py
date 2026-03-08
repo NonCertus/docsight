@@ -40,9 +40,8 @@ class TestGlossaryVisualDesktop:
         )
 
     def test_screenshot_channel_popover(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="channels"]').click()
-        demo_page.wait_for_timeout(500)
-        hint = demo_page.locator('#view-channels .docsis-group-header .glossary-hint').first
+        """Screenshot channel group header with glossary popover (on dashboard)."""
+        hint = demo_page.locator('#view-dashboard .docsis-group-header .glossary-hint').first
         hint.click()
         demo_page.wait_for_timeout(300)
         demo_page.screenshot(
