@@ -499,12 +499,12 @@ class TestDeviceInfo:
             assert info["manufacturer"] == "Arris"
             assert info["model"] == ""
 
-    def test_device_info_error_invalidates_session(self, driver):
-        """get_device_info failure marks session as dead so get_docsis_data re-auths."""
+    def test_device_info_error_preserves_session(self, driver):
+        """get_device_info failure does not kill the session so get_docsis_data can still work."""
         driver._logged_in = True
         with patch.object(driver, "_hnap_post", side_effect=Exception("500")):
             driver.get_device_info()
-        assert driver._logged_in is False
+        assert driver._logged_in is True
 
 
 class TestDataFetchRetry:

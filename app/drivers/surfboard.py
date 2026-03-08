@@ -104,8 +104,13 @@ class SurfboardDriver(ModemDriver):
                 raise RuntimeError("SURFboard login failed: connection refused after retry")
             except RuntimeError as e:
                 if "no challenge received" in str(e) and attempt < 2:
-                    log.warning("SURFboard no challenge received, retrying with fresh session")
-                    time.sleep(2)
+                    delay = 10 * (attempt + 1)
+                    log.warning(
+                        "SURFboard RELOAD (stale session on modem), "
+                        "waiting %ds for session to expire (attempt %d/3)",
+                        delay, attempt + 1,
+                    )
+                    time.sleep(delay)
                     continue
                 raise
             except requests.RequestException as e:
@@ -214,6 +219,7 @@ class SurfboardDriver(ModemDriver):
         try:
             body = {
                 "GetMultipleHNAPs": {
+                    "GetCustomerStatusStartupSequence": "",
                     "GetCustomerStatusConnectionInfo": "",
                 }
             }
@@ -228,8 +234,7 @@ class SurfboardDriver(ModemDriver):
                 "sw_version": cust.get("StatusSoftwareSfVer", ""),
             }
         except Exception:
-            # Mark session as potentially dead so get_docsis_data() re-auths
-            self._logged_in = False
+            log.warning("Failed to retrieve device info, will retry next poll")
             return {"manufacturer": "Arris", "model": "", "sw_version": ""}
 
     def get_connection_info(self) -> dict:
@@ -272,7 +277,6 @@ class SurfboardDriver(ModemDriver):
         if not r.ok:
             log.debug("HNAP %s returned HTTP %d (%d bytes): %s",
                        action, r.status_code, len(r.content), r.text[:500])
-            self._logged_in = False
         r.raise_for_status()
         return r.json()
 
