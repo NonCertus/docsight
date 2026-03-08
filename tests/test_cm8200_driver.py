@@ -51,6 +51,8 @@ SAMPLE_STATUS_HTML = """
 <tr><td>28</td><td>Locked</td><td>QAM256</td><td>723000000 Hz</td><td>1.1 dBmV</td><td>37.7 dB</td><td>0</td><td>0</td></tr>
 <tr><td>29</td><td>Locked</td><td>QAM256</td><td>729000000 Hz</td><td>1.0 dBmV</td><td>37.5 dB</td><td>0</td><td>0</td></tr>
 <tr><td>30</td><td>Locked</td><td>QAM256</td><td>735000000 Hz</td><td>0.9 dBmV</td><td>37.3 dB</td><td>0</td><td>0</td></tr>
+<tr><td>31</td><td>Locked</td><td>QAM256</td><td>741000000 Hz</td><td>0.8 dBmV</td><td>37.1 dB</td><td>0</td><td>0</td></tr>
+<tr><td>32</td><td>Locked</td><td>QAM256</td><td>747000000 Hz</td><td>0.7 dBmV</td><td>36.9 dB</td><td>0</td><td>0</td></tr>
 </table>
 
 <table class="simpleTable">
@@ -115,30 +117,41 @@ class TestDriverInit:
 
 class TestLogin:
     def test_two_step_auth_flow(self, driver):
-        """Login sends two GETs: first with credentials, then bare."""
+        """Login sends two GETs: first with credentials (returns token), then with cookie."""
         expected_creds = base64.b64encode(b"admin:password").decode()
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.text = SAMPLE_STATUS_HTML
 
-        with patch.object(driver._session, "get", return_value=mock_response) as mock_get:
+        token_response = MagicMock()
+        token_response.raise_for_status = MagicMock()
+        token_response.text = "abc123sessiontoken"
+
+        status_response = MagicMock()
+        status_response.raise_for_status = MagicMock()
+        status_response.text = SAMPLE_STATUS_HTML
+
+        with patch.object(driver._session, "get", side_effect=[token_response, status_response]) as mock_get:
             driver.login()
 
             assert mock_get.call_count == 2
-            # First call: with credentials
+            # First call: with credentials in query string
             url1 = mock_get.call_args_list[0][0][0]
             assert f"?{expected_creds}" in url1
-            # Second call: bare GET for status page
+            # Second call: bare GET with Cookie header
             url2 = mock_get.call_args_list[1][0][0]
             assert url2.endswith("/cmconnectionstatus.html")
             assert "?" not in url2
+            cookie = mock_get.call_args_list[1][1]["headers"]["Cookie"]
+            assert "credential=abc123sessiontoken" in cookie
 
     def test_login_retries_on_connection_error(self, driver):
         import requests as req
 
-        mock_response = MagicMock()
-        mock_response.raise_for_status = MagicMock()
-        mock_response.text = "<html></html>"
+        token_response = MagicMock()
+        token_response.raise_for_status = MagicMock()
+        token_response.text = "abc123token"
+
+        status_response = MagicMock()
+        status_response.raise_for_status = MagicMock()
+        status_response.text = SAMPLE_STATUS_HTML
 
         call_count = []
 
@@ -146,11 +159,11 @@ class TestLogin:
             call_count.append(1)
             if len(call_count) == 1:
                 raise req.ConnectionError("reset")
-            return mock_response
+            return token_response
 
         with patch("requests.Session") as MockSession:
             mock_new_session = MagicMock()
-            mock_new_session.get = MagicMock(return_value=mock_response)
+            mock_new_session.get = MagicMock(side_effect=[token_response, status_response])
             mock_new_session.verify = False
             MockSession.return_value = mock_new_session
 
@@ -200,7 +213,7 @@ class TestLogin:
 class TestDownstreamQAM:
     def test_channel_count(self, mock_status):
         data = mock_status.get_docsis_data()
-        assert len(data["channelDs"]["docsis30"]) == 30
+        assert len(data["channelDs"]["docsis30"]) == 32
 
     def test_first_qam_channel_fields(self, mock_status):
         data = mock_status.get_docsis_data()
@@ -224,9 +237,9 @@ class TestDownstreamQAM:
     def test_last_qam_channel(self, mock_status):
         data = mock_status.get_docsis_data()
         ch = data["channelDs"]["docsis30"][-1]
-        assert ch["channelID"] == 30
-        assert ch["frequency"] == "735 MHz"
-        assert ch["powerLevel"] == 0.9
+        assert ch["channelID"] == 32
+        assert ch["frequency"] == "747 MHz"
+        assert ch["powerLevel"] == 0.7
 
     def test_channel_with_uncorrectables(self, mock_status):
         """Channel 4 has 1 uncorrectable error."""
@@ -466,12 +479,12 @@ class TestAnalyzerIntegration:
         data = mock_status.get_docsis_data()
         result = analyze(data)
 
-        # 30 QAM + 1 OFDM = 31 downstream
-        assert result["summary"]["ds_total"] == 31
+        # 32 QAM + 1 OFDM = 33 downstream
+        assert result["summary"]["ds_total"] == 33
         # 3 SC-QAM + 1 OFDMA = 4 upstream
         assert result["summary"]["us_total"] == 4
         assert result["summary"]["health"] in ("good", "tolerated", "marginal", "poor", "critical")
-        assert len(result["ds_channels"]) == 31
+        assert len(result["ds_channels"]) == 33
         assert len(result["us_channels"]) == 4
 
     def test_qam_channels_labeled_docsis30(self, mock_status):
@@ -481,7 +494,7 @@ class TestAnalyzerIntegration:
 
         qam_ids = {ch["channelID"] for ch in data["channelDs"]["docsis30"]}
         qam_ds = [c for c in result["ds_channels"] if c["channel_id"] in qam_ids]
-        assert len(qam_ds) == 30
+        assert len(qam_ds) == 32
         for ch in qam_ds:
             assert ch["docsis_version"] == "3.0"
 

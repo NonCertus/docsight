@@ -2,8 +2,18 @@
 
 The CM8200A is an ISP-branded Arris DOCSIS 3.1 cable modem (Comcast
 reference design) with a traditional HTML web UI served by micro_httpd.
-Authentication uses base64-encoded credentials in the query string,
-with IP-based session persistence.
+Authentication uses base64-encoded credentials in the query string.
+The auth endpoint returns a session token. Due to a firmware bug, the
+modem's Set-Cookie response header is malformed and browsers cannot parse
+it automatically. Instead, the browser JS (main_arris.js) manually writes
+both the credential token and the raw malformed cookie string to
+document.cookie. Requests must replicate this by sending a hand-crafted
+Cookie header on every subsequent request:
+
+  Cookie: HttpOnly: true, Secure: true; credential=<token>
+
+If the modem returns 4170 bytes (the login page), it is either rejecting
+the session or in a 5-minute brute-force lockout with no feedback.
 
 Channel data is on /cmconnectionstatus.html in two HTML tables:
 - "Downstream Bonded Channels" (8 columns)
@@ -50,7 +60,8 @@ class CM8200Driver(ModemDriver):
     """Driver for Arris Touchstone CM8200A DOCSIS 3.1 cable modem.
 
     Authentication uses base64(user:pass) in the query string.
-    DOCSIS data is scraped from HTML tables on the status page.
+    The auth response is a session token that must be sent back via a
+    hand-crafted Cookie header (malformed Set-Cookie workaround).
     """
 
     def __init__(self, url: str, user: str, password: str):
@@ -62,29 +73,61 @@ class CM8200Driver(ModemDriver):
         self._session.verify = False
         self._session.mount("https://", _LegacyTLSAdapter())
         self._status_html = None
+        self._cookie_header = None
 
     def login(self) -> None:
         """Authenticate via base64 credentials in query string.
 
-        The CM8200A uses IP-based sessions: the first GET with credentials
-        establishes the session server-side, then a second bare GET returns
-        the actual status page HTML.
+        The CM8200A auth flow:
+          1. GET /cmconnectionstatus.html?{base64creds} returns a bare
+             session token string (~31 alphanumeric chars, not HTML).
+          2. The modem's Set-Cookie response header is malformed (firmware
+             bug). The browser JS works around this by writing the literal
+             Set-Cookie value + token into document.cookie, producing:
+               Cookie: HttpOnly: true, Secure: true; credential=<token>
+          3. Subsequent requests must include this Cookie header.
 
-        Retries once with a fresh connection if the modem drops a stale
-        TCP connection (common after container restarts).
+        Note: the modem has a 5-minute brute-force lockout with no visible
+        error. It returns the login page (HTTP 200, ~4170 bytes) instead
+        of the status page when locked out.
         """
         creds = base64.b64encode(f"{self._user}:{self._password}".encode()).decode()
         for attempt in range(2):
             try:
-                self._session.get(
+                r1 = self._session.get(
                     f"{self._url}/cmconnectionstatus.html?{creds}",
                     timeout=30,
                 )
+                r1.raise_for_status()
+                token = r1.text.strip()
+
+                # The auth endpoint returns a short alphanumeric token.
+                # If we got HTML instead, the modem rejected credentials
+                # or is in brute-force lockout.
+                if len(token) > 64 or not token.isalnum():
+                    raise RuntimeError(
+                        "CM8200 auth failed: expected session token but received "
+                        f"{len(token)} bytes (wrong credentials or brute-force "
+                        "lockout, wait 5 minutes)"
+                    )
+
+                # Replicate the browser JS cookie workaround
+                self._cookie_header = f"HttpOnly: true, Secure: true; credential={token}"
+
                 r = self._session.get(
                     f"{self._url}/cmconnectionstatus.html",
+                    headers={"Cookie": self._cookie_header},
                     timeout=30,
                 )
                 r.raise_for_status()
+
+                if len(r.text) < 5000 or "downstream bonded" not in r.text.lower():
+                    raise RuntimeError(
+                        "CM8200 auth succeeded but status page not returned "
+                        f"({len(r.text)} bytes). Modem may be in brute-force "
+                        "lockout (wait 5 minutes)."
+                    )
+
                 self._status_html = r.text
                 log.info("CM8200 auth OK")
                 return
@@ -157,12 +200,16 @@ class CM8200Driver(ModemDriver):
 
         creds = base64.b64encode(f"{self._user}:{self._password}".encode()).decode()
         try:
-            self._session.get(
+            r1 = self._session.get(
                 f"{self._url}/cmconnectionstatus.html?{creds}",
                 timeout=30,
             )
+            token = r1.text.strip()
+            self._cookie_header = f"HttpOnly: true, Secure: true; credential={token}"
+
             r = self._session.get(
                 f"{self._url}/cmconnectionstatus.html",
+                headers={"Cookie": self._cookie_header},
                 timeout=30,
             )
             r.raise_for_status()
@@ -328,7 +375,7 @@ class CM8200Driver(ModemDriver):
             return freq_str
 
     @staticmethod
-    def _parse_value(val_str: str) -> float | None:
+    def _parse_value(val_str: str):
         """Parse '8.2 dBmV' or '43.0 dB' to float."""
         if not val_str:
             return None
