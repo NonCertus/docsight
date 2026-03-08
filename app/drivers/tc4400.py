@@ -116,14 +116,16 @@ class TC4400Driver(ModemDriver):
         if not rows:
             return []
 
-        headers = [
-            th.get_text(strip=True).lower()
-            for th in rows[0].find_all(["th", "td"])
-        ]
+        header_row = self._find_header_row(rows)
+        if header_row is None:
+            return []
+
+        headers = [th.get_text(strip=True).lower() for th in header_row.find_all(["th", "td"])]
         col = self._map_columns(headers)
 
         result = []
-        for row in rows[1:]:
+        data_rows = [r for r in rows if r != header_row]
+        for row in data_rows:
             cells = [td.get_text(strip=True) for td in row.find_all("td")]
             if len(cells) < 4:
                 continue
@@ -134,9 +136,22 @@ class TC4400Driver(ModemDriver):
 
             try:
                 channel_id = self._cell(cells, col["channel_id"], "0")
+                
+                # Use channel_type (OFDM/SC-QAM) for type, modulation as fallback
+                channel_type = self._cell(cells, col["channel_type"], "")
                 modulation = self._normalize_modulation(
                     self._cell(cells, col["modulation"])
                 )
+                
+                # For OFDM channels, channel_type gives us OFDM vs SC-QAM
+                # For SC-QAM, modulation gives us qam_256 etc.
+                if channel_type.upper() in ("OFDM",):
+                    final_type = "ofdm"
+                elif channel_type.upper() in ("SC-QAM",):
+                    final_type = modulation if modulation else "qam"
+                else:
+                    final_type = modulation if modulation else "unknown"
+                
                 frequency = self._parse_frequency(
                     self._cell(cells, col["frequency"])
                 )
@@ -147,11 +162,11 @@ class TC4400Driver(ModemDriver):
                     self._parse_number(self._cell(cells, col["uncorrected"]))
                 )
 
-                is_ofdm = modulation in ("ofdm",)
+                is_ofdm = final_type == "ofdm"
 
                 result.append({
                     "channelID": channel_id,
-                    "type": modulation,
+                    "type": final_type,
                     "frequency": f"{int(frequency)} MHz" if frequency else "",
                     "powerLevel": power,
                     "mse": None if is_ofdm else (-snr if snr else None),
@@ -171,14 +186,16 @@ class TC4400Driver(ModemDriver):
         if not rows:
             return []
 
-        headers = [
-            th.get_text(strip=True).lower()
-            for th in rows[0].find_all(["th", "td"])
-        ]
+        header_row = self._find_header_row(rows)
+        if header_row is None:
+            return []
+
+        headers = [th.get_text(strip=True).lower() for th in header_row.find_all(["th", "td"])]
         col = self._map_columns(headers)
 
         result = []
-        for row in rows[1:]:
+        data_rows = [r for r in rows if r != header_row]
+        for row in data_rows:
             cells = [td.get_text(strip=True) for td in row.find_all("td")]
             if len(cells) < 4:
                 continue
@@ -209,16 +226,29 @@ class TC4400Driver(ModemDriver):
 
         return result
 
+    @staticmethod
+    def _find_header_row(rows):
+        """Find the actual header row, skipping title rows with colspan."""
+        for row in rows:
+            cells = row.find_all(["th", "td"])
+            if cells and any(cell.get("colspan") for cell in cells):
+                continue
+            if cells and len(cells) > 3:
+                return row
+        return None
+
     def _map_columns(self, headers: list[str]) -> dict:
         """Map header names to column indices.
 
-        Handles firmware variations like "Received Level" vs "Receive Level"
-        and "Channel Type" vs "Modulation".
+        Uses fuzzy matching to handle firmware variations like
+        "Received Level" vs "Receive Level", "Channel ID" vs "Channel Index",
+        "Channel Type" vs "Modulation / Profile ID".
         """
         col = {
             "channel_id": None,
             "lock_status": None,
             "modulation": None,
+            "channel_type": None,
             "frequency": None,
             "power": None,
             "snr": None,
@@ -231,7 +261,9 @@ class TC4400Driver(ModemDriver):
                 col["channel_id"] = i
             elif "lock" in h:
                 col["lock_status"] = i
-            elif "modulation" in h or "channel type" in h:
+            elif "channel" in h and "type" in h:
+                col["channel_type"] = i
+            elif "modulation" in h or "profile" in h:
                 col["modulation"] = i
             elif "freq" in h:
                 col["frequency"] = i
@@ -249,7 +281,7 @@ class TC4400Driver(ModemDriver):
             col["channel_id"] = 0
         if col["lock_status"] is None:
             col["lock_status"] = 1
-        if col["modulation"] is None:
+        if col["channel_type"] is None and col["modulation"] is None:
             col["modulation"] = 2
         if col["frequency"] is None:
             col["frequency"] = 3
