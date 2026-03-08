@@ -13,9 +13,19 @@
     var pop = hint.querySelector('.glossary-popover');
     if (!pop) return;
     pop.classList.remove('above');
-    var rect = pop.getBoundingClientRect();
-    if (rect.bottom > window.innerHeight - 80) {
+    var r = hint.getBoundingClientRect();
+    // Position below the icon, centered
+    var top = r.bottom + 8;
+    var left = r.left + r.width / 2;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.transform = 'translateX(-50%)';
+    // Flip above if near bottom
+    var popRect = pop.getBoundingClientRect();
+    if (popRect.bottom > window.innerHeight - 20) {
       pop.classList.add('above');
+      pop.style.top = (r.top - 8) + 'px';
+      pop.style.transform = 'translateX(-50%) translateY(-100%)';
     }
   }
 

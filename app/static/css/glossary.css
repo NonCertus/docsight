@@ -4,9 +4,26 @@
   display: inline-flex;
   align-items: center;
   cursor: pointer;
-  position: relative;
   margin-left: 4px;
   vertical-align: middle;
+}
+
+/* Inside metric cards: position in top-right corner */
+.metric-card .glossary-hint {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  margin: 0;
+  z-index: 2;
+}
+
+/* Inside modulation KPI cards: top-right corner */
+.modulation-kpi-card .glossary-hint {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  margin: 0;
+  z-index: 2;
 }
 
 .glossary-hint > i,
@@ -14,7 +31,7 @@
   width: 13px;
   height: 13px;
   color: var(--text-muted);
-  opacity: 0.6;
+  opacity: 0.45;
   transition: opacity 0.2s, color 0.2s;
 }
 
@@ -26,10 +43,7 @@
 
 .glossary-popover {
   display: none;
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 8px);
-  transform: translateX(-50%);
+  position: fixed;
   width: max-content;
   max-width: 320px;
   padding: 12px 16px;
@@ -44,12 +58,9 @@
   z-index: 500;
   pointer-events: auto;
   white-space: normal;
-}
-
-/* Flip above when near bottom */
-.glossary-popover.above {
-  top: auto;
-  bottom: calc(100% + 8px);
+  text-transform: none;
+  letter-spacing: normal;
+  text-align: left;
 }
 
 /* Arrow */
@@ -80,15 +91,13 @@
   display: block;
 }
 
-/* Mobile: full width */
+/* Mobile: full width bottom sheet */
 @media (max-width: 768px) {
   .glossary-popover {
-    position: fixed;
-    left: 16px;
+    left: 16px !important;
     right: 16px;
-    top: auto;
+    top: auto !important;
     bottom: calc(var(--bottom-nav-h) + 16px);
-    transform: none;
     width: auto;
     max-width: none;
   }
