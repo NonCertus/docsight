@@ -1,7 +1,11 @@
 """Tests for the Before/After Comparison module."""
 
+import os
+import sys
+
 import pytest
 from unittest.mock import patch, MagicMock
+from flask import Flask
 from app.web import app
 
 
@@ -239,3 +243,103 @@ class TestComputeDelta:
         delta = _compute_delta(pa, pb)
         assert delta["ds_power"] is None
         assert delta["ds_snr"] is None
+
+    def test_both_periods_empty(self):
+        from app.modules.comparison.routes import _aggregate_period, _compute_delta
+
+        pa = _aggregate_period([])
+        pb = _aggregate_period([])
+        delta = _compute_delta(pa, pb)
+        assert delta["ds_power"] is None
+        assert delta["uncorr_errors"] == 0
+        assert delta["verdict"] == "unchanged"
+
+    def test_extreme_snr_improvement(self):
+        """Large SNR jump should be classified as improved."""
+        from app.modules.comparison.routes import _aggregate_period, _compute_delta
+
+        great = {
+            "timestamp": "2026-03-08T06:00:00Z",
+            "summary": {
+                "ds_power_avg": 3.0,
+                "ds_snr_avg": 40.0,
+                "us_power_avg": 42.0,
+                "ds_correctable_errors": 0,
+                "ds_uncorrectable_errors": 0,
+                "health": "good",
+            },
+            "ds_channels": [],
+            "us_channels": [],
+        }
+        pa = _aggregate_period([SNAPSHOT_A])
+        pb = _aggregate_period([great])
+        delta = _compute_delta(pa, pb)
+        assert delta["verdict"] == "improved"
+
+
+class TestModuleDiscovery:
+    """Integration: comparison module loads correctly via module loader."""
+
+    def setup_method(self):
+        from app.i18n import _TRANSLATIONS
+
+        self._orig_translations = {k: dict(v) for k, v in _TRANSLATIONS.items()}
+        self._orig_sys_modules = set(sys.modules.keys())
+
+    def teardown_method(self):
+        from app.i18n import _TRANSLATIONS
+        from app import web
+
+        _TRANSLATIONS.clear()
+        _TRANSLATIONS.update(self._orig_translations)
+        for key in list(sys.modules.keys()):
+            if key not in self._orig_sys_modules:
+                del sys.modules[key]
+        web.init_modules(None)
+
+    def test_comparison_module_discovered(self):
+        from app.module_loader import discover_modules
+
+        modules_dir = os.path.join(os.path.dirname(__file__), "..", "app", "modules")
+        mods = discover_modules([modules_dir])
+        ids = [m.id for m in mods]
+        assert "docsight.comparison" in ids
+
+    def test_comparison_module_has_correct_type(self):
+        from app.module_loader import discover_modules
+
+        modules_dir = os.path.join(os.path.dirname(__file__), "..", "app", "modules")
+        mods = discover_modules([modules_dir])
+        mod = next(m for m in mods if m.id == "docsight.comparison")
+        assert mod.type == "analysis"
+
+    def test_comparison_module_loads_i18n(self):
+        from app.module_loader import ModuleLoader
+
+        modules_dir = os.path.join(os.path.dirname(__file__), "..", "app", "modules")
+        test_app = Flask(__name__)
+        loader = ModuleLoader(test_app, search_paths=[modules_dir])
+        loader.load_all()
+
+        from app.i18n import get_translations
+
+        en = get_translations("en")
+        assert en.get("docsight.comparison.title") == "Before/After Comparison"
+
+        de = get_translations("de")
+        assert de.get("docsight.comparison.title") == "Vorher/Nachher-Vergleich"
+
+    def test_comparison_manifest_valid(self):
+        import json
+
+        manifest_path = os.path.join(
+            os.path.dirname(__file__), "..", "app", "modules", "comparison", "manifest.json"
+        )
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+
+        assert manifest["id"] == "docsight.comparison"
+        assert "routes" in manifest["contributes"]
+        assert "tab" in manifest["contributes"]
+        assert "i18n" in manifest["contributes"]
+        assert manifest["menu"]["label_key"] == "docsight.comparison.title"
