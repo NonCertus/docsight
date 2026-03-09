@@ -98,7 +98,8 @@ Open `http://localhost:8765` — no setup required.
 | **[Correlation Analysis](https://github.com/itsDNNS/docsight/wiki/Features-Correlation-Analysis)** | Unified timeline combining signal, speedtest, and event data |
 | **[Gaming Quality Index](https://github.com/itsDNNS/docsight/wiki/Features-Gaming-Quality)** | **NEW:** A-F grade for gaming readiness based on latency, jitter, and signal health |
 | **[Modulation Performance](https://github.com/itsDNNS/docsight/wiki/Features-Modulation-Performance)** | **NEW:** Per-protocol-group modulation health index with intraday channel drill-down |
-| **[In-App Glossary](https://github.com/itsDNNS/docsight/issues/158)** | **NEW:** Contextual help popovers explaining DOCSIS terminology directly on the dashboard |
+| **[In-App Glossary](https://github.com/itsDNNS/docsight/wiki/Features-Glossary)** | Contextual help popovers explaining DOCSIS terminology directly on the dashboard |
+| **[Cable Segment Utilization](https://github.com/itsDNNS/docsight/wiki/Features-Segment-Utilization)** | **NEW:** FRITZ!Box cable segment load monitoring with downstream/upstream utilization charts |
 | **[Event Log](https://github.com/itsDNNS/docsight/wiki/Features-Event-Log)** | Automatic anomaly detection with modulation watchdog |
 | **[Speedtest Integration](https://github.com/itsDNNS/docsight/wiki/Features-Speedtest)** | Speed test history from [Speedtest Tracker](https://github.com/alexjustesen/speedtest-tracker) |
 | **[Incident Journal](https://github.com/itsDNNS/docsight/wiki/Features-Incident-Journal)** | Document ISP issues with icons, Excel/CSV import, search, attachments, **incident groups**, and export (CSV/JSON/Markdown) |
@@ -295,6 +296,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). **Please open an issue before working on
 | Sagemcom F@st 3896 Support | ✅ Released | [#163](https://github.com/itsDNNS/docsight/issues/163) |
 | Hitron CODA-56 Support | ✅ Released | [#172](https://github.com/itsDNNS/docsight/issues/172) |
 | Arris SB6141 Support | ✅ Released | [#174](https://github.com/itsDNNS/docsight/issues/174) |
+| Cable Segment Utilization | ✅ Released | [#188](https://github.com/itsDNNS/docsight/issues/188) |
 
 **Planned:**
 
