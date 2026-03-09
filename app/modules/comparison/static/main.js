@@ -84,7 +84,7 @@ function _cmpRunComparison() {
     document.getElementById('comparison-delta').style.display = 'none';
     document.getElementById('comparison-loading').style.display = 'block';
 
-    var url = '/api/comparison/compare?from_a=' + encodeURIComponent(_cmpToISO(fromA)) +
+    var url = '/api/comparison?from_a=' + encodeURIComponent(_cmpToISO(fromA)) +
               '&to_a=' + encodeURIComponent(_cmpToISO(toA)) +
               '&from_b=' + encodeURIComponent(_cmpToISO(fromB)) +
               '&to_b=' + encodeURIComponent(_cmpToISO(toB));

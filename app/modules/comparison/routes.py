@@ -112,7 +112,7 @@ def _compute_delta(period_a, period_b):
     }
 
 
-@bp.route("/api/comparison/compare")
+@bp.route("/api/comparison")
 @require_auth
 def api_compare():
     """Compare signal quality between two time periods."""

@@ -93,6 +93,11 @@
             <i data-lucide="gamepad-2"></i> {{ t.gaming_quality_label }}
         </a>
         {% endif %}
+        {% if modules|selectattr('id', 'equalto', 'docsight.comparison')|list %}
+        <a class="nav-item" data-view="comparison">
+            <i data-lucide="git-compare-arrows"></i> {{ t.get('docsight.comparison.title', 'Before/After Comparison') }}
+        </a>
+        {% endif %}
         <div class="nav-group-label">{{ t.sidebar_external }}</div>
         {% if modules|selectattr('id', 'equalto', 'docsight.speedtest')|list %}
         {% if speedtest_configured %}
@@ -147,7 +152,7 @@
         </a>
         {% endif %}
         {% set tab_modules = [] %}
-        {% for mod in modules if mod.template_paths.get('tab') and mod.id != 'docsight.modulation' %}
+        {% for mod in modules if mod.template_paths.get('tab') and mod.id not in ('docsight.modulation', 'docsight.comparison') %}
             {% if tab_modules.append(mod) %}{% endif %}
         {% endfor %}
         {% if tab_modules %}
@@ -1762,7 +1767,7 @@
    MODULE VIEWS - Dynamically rendered from enabled modules with tab template
    ══════════════════════════════════════════════════════════════════════════ #}
 {% for mod in modules if mod.template_paths.get('tab') %}
-<div id="{% if mod.id == 'docsight.modulation' %}view-modulation{% else %}view-mod-{{ mod.id|replace('.', '-') }}{% endif %}" class="view">
+<div id="{% if mod.id == 'docsight.modulation' %}view-modulation{% elif mod.id == 'docsight.comparison' %}view-comparison{% else %}view-mod-{{ mod.id|replace('.', '-') }}{% endif %}" class="view">
     {% include mod.template_paths['tab'] %}
 </div>
 {% endfor %}
@@ -2254,6 +2259,8 @@ var T = {{ t|tojson }};
             if (typeof loadTrends === 'function') loadTrends(_trendRange);
         } else if (view === 'modulation') {
             if (typeof initModulation === 'function') initModulation();
+        } else if (view === 'comparison') {
+            if (typeof initComparison === 'function') initComparison();
         } else if (view.indexOf('mod-') === 0) {
             /* Generic module init: mod-docsight-comparison → initComparison */
             var parts = view.replace('mod-docsight-', '').split('-');
@@ -2495,8 +2502,12 @@ var T = {{ t|tojson }};
 <script src="/static/js/correlation.js"></script>
 <script src="/static/js/glossary.js"></script>
 
+{% for mod in modules if mod.has_js %}
+<script src="/modules/{{ mod.id }}/static/main.js"></script>
+{% endfor %}
+
 <script>
-  // Apply deferred hash-based view routing (all external scripts are now loaded)
+  // Apply deferred hash-based view routing (all scripts including modules are now loaded)
   if (window._pendingView) {
     window.switchView(window._pendingView, true);
     delete window._pendingView;
@@ -2506,9 +2517,6 @@ var T = {{ t|tojson }};
     lucide.createIcons();
   });
 </script>
-{% for mod in modules if mod.has_js %}
-<script src="/modules/{{ mod.id }}/static/main.js"></script>
-{% endfor %}
 
 <!-- Bottom Tab Bar (mobile only, hidden on desktop via CSS) -->
 <nav class="bottom-nav" role="tablist" aria-label="Main tabs">

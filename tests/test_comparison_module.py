@@ -47,11 +47,11 @@ SNAPSHOT_B = {
 
 class TestCompareEndpoint:
     def test_missing_params_returns_400(self, app_client):
-        resp = app_client.get("/api/comparison/compare")
+        resp = app_client.get("/api/comparison")
         assert resp.status_code == 400
 
     def test_partial_params_returns_400(self, app_client):
-        resp = app_client.get("/api/comparison/compare?from_a=2026-03-01&to_a=2026-03-01")
+        resp = app_client.get("/api/comparison?from_a=2026-03-01&to_a=2026-03-01")
         assert resp.status_code == 400
 
     def test_valid_request_returns_periods_and_delta(self, app_client):
@@ -63,7 +63,7 @@ class TestCompareEndpoint:
             ]
             mock_storage.return_value = storage
             resp = app_client.get(
-                "/api/comparison/compare"
+                "/api/comparison"
                 "?from_a=2026-03-01T00:00:00Z&to_a=2026-03-01T23:59:00Z"
                 "&from_b=2026-03-08T00:00:00Z&to_b=2026-03-08T23:59:00Z"
             )
@@ -83,7 +83,7 @@ class TestCompareEndpoint:
             storage.get_range_data.side_effect = [[], [SNAPSHOT_B]]
             mock_storage.return_value = storage
             resp = app_client.get(
-                "/api/comparison/compare"
+                "/api/comparison"
                 "?from_a=2026-03-01T00:00:00Z&to_a=2026-03-01T23:59:00Z"
                 "&from_b=2026-03-08T00:00:00Z&to_b=2026-03-08T23:59:00Z"
             )
@@ -98,7 +98,7 @@ class TestCompareEndpoint:
             storage.get_range_data.side_effect = [[SNAPSHOT_A], [SNAPSHOT_B]]
             mock_storage.return_value = storage
             resp = app_client.get(
-                "/api/comparison/compare"
+                "/api/comparison"
                 "?from_a=2026-03-01T00:00:00Z&to_a=2026-03-01T23:59:00Z"
                 "&from_b=2026-03-08T00:00:00Z&to_b=2026-03-08T23:59:00Z"
             )
@@ -125,7 +125,7 @@ class TestCompareEndpoint:
             storage.get_range_data.side_effect = [[SNAPSHOT_A], [better_b]]
             mock_storage.return_value = storage
             resp = app_client.get(
-                "/api/comparison/compare"
+                "/api/comparison"
                 "?from_a=2026-03-01T00:00:00Z&to_a=2026-03-01T23:59:00Z"
                 "&from_b=2026-03-08T00:00:00Z&to_b=2026-03-08T23:59:00Z"
             )
@@ -139,7 +139,7 @@ class TestCompareEndpoint:
             storage.get_range_data.side_effect = [[SNAPSHOT_A], [SNAPSHOT_A]]
             mock_storage.return_value = storage
             resp = app_client.get(
-                "/api/comparison/compare"
+                "/api/comparison"
                 "?from_a=2026-03-01T00:00:00Z&to_a=2026-03-01T23:59:00Z"
                 "&from_b=2026-03-08T00:00:00Z&to_b=2026-03-08T23:59:00Z"
             )
@@ -152,7 +152,7 @@ class TestCompareEndpoint:
             storage.get_range_data.side_effect = [[SNAPSHOT_A], [SNAPSHOT_B]]
             mock_storage.return_value = storage
             resp = app_client.get(
-                "/api/comparison/compare"
+                "/api/comparison"
                 "?from_a=2026-03-01T00:00:00Z&to_a=2026-03-01T23:59:00Z"
                 "&from_b=2026-03-08T00:00:00Z&to_b=2026-03-08T23:59:00Z"
             )
@@ -166,7 +166,7 @@ class TestCompareEndpoint:
             storage.get_range_data.side_effect = [[SNAPSHOT_A, SNAPSHOT_A], [SNAPSHOT_B]]
             mock_storage.return_value = storage
             resp = app_client.get(
-                "/api/comparison/compare"
+                "/api/comparison"
                 "?from_a=2026-03-01T00:00:00Z&to_a=2026-03-01T23:59:00Z"
                 "&from_b=2026-03-08T00:00:00Z&to_b=2026-03-08T23:59:00Z"
             )
@@ -180,7 +180,7 @@ class TestCompareEndpoint:
             storage.get_range_data.side_effect = [[], []]
             mock_storage.return_value = storage
             resp = app_client.get(
-                "/api/comparison/compare"
+                "/api/comparison"
                 "?from_a=2026-03-01T00:00:00Z&to_a=2026-03-01T23:59:00Z"
                 "&from_b=2026-03-08T00:00:00Z&to_b=2026-03-08T23:59:00Z"
             )
@@ -284,7 +284,10 @@ class TestModuleDiscovery:
         from app.i18n import _TRANSLATIONS
 
         self._orig_translations = {k: dict(v) for k, v in _TRANSLATIONS.items()}
-        self._orig_sys_modules = set(sys.modules.keys())
+        self._orig_sys_modules = {
+            k: v for k, v in sys.modules.items()
+            if k.startswith("app.modules.")
+        }
 
     def teardown_method(self):
         from app.i18n import _TRANSLATIONS
@@ -292,9 +295,14 @@ class TestModuleDiscovery:
 
         _TRANSLATIONS.clear()
         _TRANSLATIONS.update(self._orig_translations)
+        # Restore original module objects (load_all re-imports them as new objects,
+        # which breaks unittest.mock.patch targets for later tests)
         for key in list(sys.modules.keys()):
-            if key not in self._orig_sys_modules:
-                del sys.modules[key]
+            if key.startswith("app.modules."):
+                if key in self._orig_sys_modules:
+                    sys.modules[key] = self._orig_sys_modules[key]
+                else:
+                    del sys.modules[key]
         web.init_modules(None)
 
     def test_comparison_module_discovered(self):
