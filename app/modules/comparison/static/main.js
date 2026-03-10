@@ -1,6 +1,7 @@
 /* -- Before/After Comparison Module -- */
 
 var _cmpInitialized = false;
+var _cmpLastResult = null;
 
 /* ── Preset Definitions ── */
 function _cmpPresetDates(preset) {
@@ -96,15 +97,24 @@ function _cmpRunComparison() {
             if (data.error) {
                 placeholder.style.display = 'block';
                 placeholder.textContent = data.error;
+                document.getElementById('comparison-health').style.display = 'none';
+                _cmpLastResult = null;
+                window.__docsightComparisonResult = null;
                 return;
             }
+            _cmpLastResult = data;
+            window.__docsightComparisonResult = data;
             _cmpRenderCharts(data);
+            _cmpRenderHealthDistribution(data);
             _cmpRenderDeltaTable(data);
         })
         .catch(function(err) {
             document.getElementById('comparison-loading').style.display = 'none';
             placeholder.style.display = 'block';
             placeholder.textContent = err.message;
+            document.getElementById('comparison-health').style.display = 'none';
+            _cmpLastResult = null;
+            window.__docsightComparisonResult = null;
         });
 }
 
@@ -217,6 +227,90 @@ function _cmpRenderDeltaTable(data) {
     document.getElementById('comparison-delta').style.display = '';
 }
 
+function _cmpRenderHealthDistribution(data) {
+    _cmpRenderHealthCard(
+        document.getElementById('comparison-health-range-a'),
+        document.getElementById('comparison-health-bars-a'),
+        data.period_a
+    );
+    _cmpRenderHealthCard(
+        document.getElementById('comparison-health-range-b'),
+        document.getElementById('comparison-health-bars-b'),
+        data.period_b
+    );
+    document.getElementById('comparison-health').style.display = '';
+}
+
+function _cmpRenderHealthCard(rangeEl, container, period) {
+    rangeEl.textContent = _cmpFormatRange(period.from, period.to);
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    [
+        ['good', _cmpHealthLabel('good')],
+        ['tolerated', _cmpHealthLabel('tolerated')],
+        ['marginal', _cmpHealthLabel('marginal')],
+        ['critical', _cmpHealthLabel('critical')],
+        ['unknown', _cmpHealthLabel('unknown')]
+    ].forEach(function(entry) {
+        var key = entry[0];
+        var label = entry[1];
+        container.appendChild(_cmpCreateHealthRow(label, key, period.health_distribution || {}, period.snapshots || 0));
+    });
+}
+
+function _cmpCreateHealthRow(label, key, dist, total) {
+    var count = dist[key] || 0;
+    var pct = total ? Math.round((count / total) * 100) : 0;
+    var row = document.createElement('div');
+    row.className = 'comparison-health-row';
+
+    var labelEl = document.createElement('div');
+    labelEl.className = 'comparison-health-label';
+    labelEl.textContent = label;
+    row.appendChild(labelEl);
+
+    var track = document.createElement('div');
+    track.className = 'comparison-health-track';
+    var fill = document.createElement('div');
+    fill.className = 'comparison-health-fill health-' + key;
+    fill.style.width = pct + '%';
+    track.appendChild(fill);
+    row.appendChild(track);
+
+    var valueEl = document.createElement('div');
+    valueEl.className = 'comparison-health-value';
+    valueEl.textContent = count + ' (' + pct + '%)';
+    row.appendChild(valueEl);
+
+    return row;
+}
+
+function _cmpHealthLabel(key) {
+    var map = {
+        good: T.health_good || 'Good',
+        tolerated: T.health_tolerated || 'Tolerated',
+        marginal: T.health_marginal || 'Marginal',
+        critical: T.health_critical || 'Critical',
+        unknown: T.unknown || 'Unknown'
+    };
+    return map[key] || key;
+}
+
+function _cmpFormatRange(fromTs, toTs) {
+    return _cmpShortDate(fromTs) + ' - ' + _cmpShortDate(toTs);
+}
+
+function _cmpShortDate(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    if (isNaN(d.getTime())) return ts;
+    var month = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    var hours = String(d.getHours()).padStart(2, '0');
+    var minutes = String(d.getMinutes()).padStart(2, '0');
+    return d.getFullYear() + '-' + month + '-' + day + ' ' + hours + ':' + minutes;
+}
+
 function _cmpAppendDeltaRow(tbody, label, aVal, bVal, unit, delta, higherIsBetter, isInt) {
     var aStr = aVal != null ? (isInt ? String(aVal) : aVal.toFixed(1)) + (unit ? ' ' + unit : '') : '-';
     var bStr = bVal != null ? (isInt ? String(bVal) : bVal.toFixed(1)) + (unit ? ' ' + unit : '') : '-';
@@ -286,4 +380,12 @@ function initComparison() {
     _cmpApplyPreset();
 }
 
+function openComparisonInComplaint() {
+    if (!_cmpLastResult) return;
+    if (typeof openReportModal === 'function') openReportModal();
+    var toggle = document.getElementById('report-include-comparison');
+    if (toggle) toggle.checked = true;
+}
+
+window.openComparisonInComplaint = openComparisonInComplaint;
 window.initComparison = initComparison;

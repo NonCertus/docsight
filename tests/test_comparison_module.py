@@ -218,7 +218,25 @@ class TestAggregatePeriod:
         assert result["avg"]["ds_power"] == pytest.approx(3.65)
         assert result["avg"]["ds_snr"] == pytest.approx(32.85)
         assert result["total"]["corr_errors"] == 300
-        assert result["total"]["uncorr_errors"] == 127
+
+    def test_compare_periods_helper(self):
+        from app.modules.comparison.routes import compare_periods
+
+        storage = MagicMock()
+        storage.get_range_data.side_effect = [[SNAPSHOT_A], [SNAPSHOT_B]]
+
+        result = compare_periods(
+            storage,
+            "2026-03-01T00:00:00Z",
+            "2026-03-01T23:59:00Z",
+            "2026-03-08T00:00:00Z",
+            "2026-03-08T23:59:00Z",
+        )
+
+        assert result["period_a"]["avg"]["ds_power"] == 3.1
+        assert result["period_b"]["health_distribution"]["marginal"] == 1
+        assert result["delta"]["verdict"] == "degraded"
+        assert result["period_b"]["total"]["uncorr_errors"] == 127
 
 
 class TestComputeDelta:

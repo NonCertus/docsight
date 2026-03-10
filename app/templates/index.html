@@ -1928,6 +1928,15 @@
                     </label>
                 </div>
                 {% endif %}
+                <div style="margin-top:10px;">
+                    <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text);">
+                        <input type="checkbox" id="report-include-comparison">
+                        {{ t.get('report_include_comparison', 'Include active before/after comparison') }}
+                    </label>
+                    <div id="report-comparison-note" style="font-size:12px; color:var(--muted); margin-top:6px;">
+                        {{ t.get('report_include_comparison_hint', 'Run a comparison first to attach the current before/after evidence.') }}
+                    </div>
+                </div>
                 <input type="hidden" id="report-bnetz-id" value="">
             </div>
             <!-- Step 2: Generated complaint text (hidden initially) -->
@@ -2555,8 +2564,25 @@ var T = {{ t|tojson }};
 
 <script>
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-        .catch(function(err) { console.warn('SW registration failed:', err); });
+    var isLocalDevHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (isLocalDevHost) {
+        navigator.serviceWorker.getRegistrations()
+            .then(function(registrations) {
+                return Promise.all(registrations.map(function(registration) {
+                    return registration.unregister();
+                }));
+            })
+            .then(function() {
+                if (!window.caches) return;
+                return caches.keys().then(function(keys) {
+                    return Promise.all(keys.map(function(key) { return caches.delete(key); }));
+                });
+            })
+            .catch(function(err) { console.warn('SW cleanup failed:', err); });
+    } else {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .catch(function(err) { console.warn('SW registration failed:', err); });
+    }
 }
 </script>
 </body>

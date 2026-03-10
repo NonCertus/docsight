@@ -21,6 +21,8 @@
   "us_power": "US Power",
   "uncorr_errors": "Uncorr. Errors",
   "health": "Health",
+  "health_distribution": "Health Distribution",
+  "use_in_complaint": "Use in Complaint Letter",
   "snapshots": "Snapshots",
   "no_data_period": "No data in selected period",
   "select_periods": "Select two time periods to compare signal quality.",

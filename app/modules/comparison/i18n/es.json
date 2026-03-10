@@ -21,6 +21,8 @@
   "us_power": "US Power",
   "uncorr_errors": "Errores no corr.",
   "health": "Salud",
+  "health_distribution": "Distribucion de salud",
+  "use_in_complaint": "Usar en la carta de reclamacion",
   "snapshots": "Snapshots",
   "no_data_period": "Sin datos en el período seleccionado",
   "select_periods": "Seleccione dos períodos para comparar la calidad de la señal.",

@@ -21,6 +21,8 @@
   "us_power": "US Power",
   "uncorr_errors": "Unkorrg. Fehler",
   "health": "Zustand",
+  "health_distribution": "Verteilung des Zustands",
+  "use_in_complaint": "Im Beschwerdeschreiben nutzen",
   "snapshots": "Snapshots",
   "no_data_period": "Keine Daten im gewählten Zeitraum",
   "select_periods": "Wählen Sie zwei Zeiträume, um die Signalqualität zu vergleichen.",

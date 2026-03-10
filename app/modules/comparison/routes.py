@@ -112,6 +112,25 @@ def _compute_delta(period_a, period_b):
     }
 
 
+def compare_periods(storage, from_a, to_a, from_b, to_b):
+    """Load and compare two periods from snapshot storage."""
+    snapshots_a = storage.get_range_data(from_a, to_a)
+    snapshots_b = storage.get_range_data(from_b, to_b)
+
+    period_a = _aggregate_period(snapshots_a)
+    period_b = _aggregate_period(snapshots_b)
+    period_a["from"] = from_a
+    period_a["to"] = to_a
+    period_b["from"] = from_b
+    period_b["to"] = to_b
+
+    return {
+        "period_a": period_a,
+        "period_b": period_b,
+        "delta": _compute_delta(period_a, period_b),
+    }
+
+
 @bp.route("/api/comparison")
 @require_auth
 def api_compare():
@@ -128,20 +147,4 @@ def api_compare():
     if not storage:
         return jsonify({"error": "storage not available"}), 503
 
-    snapshots_a = storage.get_range_data(from_a, to_a)
-    snapshots_b = storage.get_range_data(from_b, to_b)
-
-    period_a = _aggregate_period(snapshots_a)
-    period_b = _aggregate_period(snapshots_b)
-    period_a["from"] = from_a
-    period_a["to"] = to_a
-    period_b["from"] = from_b
-    period_b["to"] = to_b
-
-    delta = _compute_delta(period_a, period_b)
-
-    return jsonify({
-        "period_a": period_a,
-        "period_b": period_b,
-        "delta": delta,
-    })
+    return jsonify(compare_periods(storage, from_a, to_a, from_b, to_b))
