@@ -288,6 +288,53 @@ class TestLogin:
             driver.login()
             assert driver._status_html == mock_response.text
 
+    def test_login_falls_back_to_form_login(self, driver):
+        login_wrapper = MagicMock()
+        login_wrapper.raise_for_status = MagicMock()
+        login_wrapper.text = """
+            <html><body>
+            <script>
+            if (sessionStorage.getItem('PrivateKey') === null) {
+                window.location.replace('../Login.htm');
+            }
+            </script>
+            </body></html>
+        """
+        login_page = MagicMock()
+        login_page.raise_for_status = MagicMock()
+        login_page.text = """
+            <html><body>
+              <form action="/goform/Login" method="post">
+                <input type="hidden" name="foo" value="bar">
+                <input type="text" name="loginName" value="">
+                <input type="password" name="loginPassword" value="">
+              </form>
+            </body></html>
+        """
+        status_page = MagicMock()
+        status_page.raise_for_status = MagicMock()
+        status_page.text = STATUS_HTML
+        login_submit = MagicMock()
+        login_submit.raise_for_status = MagicMock()
+
+        with (
+            patch.object(
+                driver._session,
+                "get",
+                side_effect=[login_wrapper, login_page, status_page],
+            ) as mock_get,
+            patch.object(driver._session, "post", return_value=login_submit) as mock_post,
+        ):
+            driver.login()
+
+        assert driver._status_html == STATUS_HTML
+        assert mock_get.call_count == 3
+        mock_post.assert_called_once_with(
+            "http://192.168.100.1/goform/Login",
+            data={"foo": "bar", "loginName": "admin", "loginPassword": "password"},
+            timeout=30,
+        )
+
     def test_login_accepts_double_quoted_status_page_with_login_markers(self, driver):
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()

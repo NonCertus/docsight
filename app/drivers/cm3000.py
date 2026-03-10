@@ -16,6 +16,7 @@ Auth is HTTP Basic Auth (standard for Netgear Nighthawk modems).
 
 import logging
 import re
+from urllib.parse import urljoin
 
 import requests
 
@@ -41,6 +42,12 @@ _LOGIN_MARKERS = (
 )
 _RE_TITLE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
 _RE_FORM_ACTION = re.compile(r"<form[^>]+action=['\"]([^'\"]+)['\"]", re.IGNORECASE)
+_RE_FORM_BLOCK = re.compile(
+    r"<form[^>]*action=['\"](?P<action>[^'\"]+)['\"][^>]*>(?P<body>.*?)</form>",
+    re.IGNORECASE | re.DOTALL,
+)
+_RE_INPUT = re.compile(r"<input\b(?P<attrs>[^>]*)>", re.IGNORECASE | re.DOTALL)
+_RE_ATTR = re.compile(r"(?P<name>[A-Za-z_:][-A-Za-z0-9_:.]*)\s*=\s*['\"](?P<value>[^'\"]*)['\"]")
 
 # Fields per channel for each section (after the leading count value).
 _DS_QAM_FIELDS = 9   # num|lock|mod|chID|freq|power|snr|corrErr|uncorrErr
@@ -73,7 +80,18 @@ class CM3000Driver(ModemDriver):
             try:
                 r = self._session.get(f"{self._url}{_STATUS_PATH}", timeout=30)
                 r.raise_for_status()
-                self._ensure_status_page(r.text)
+                try:
+                    self._ensure_status_page(r.text)
+                except RuntimeError:
+                    if not self._looks_like_login_page(r.text):
+                        self._log_status_page_diagnostics(r.text, "login")
+                        raise
+                    if not self._login_via_form():
+                        self._log_status_page_diagnostics(r.text, "login")
+                        raise
+                    r = self._session.get(f"{self._url}{_STATUS_PATH}", timeout=30)
+                    r.raise_for_status()
+                    self._ensure_status_page(r.text)
                 self._status_html = r.text
                 log.info("CM3000 auth OK")
                 return
@@ -177,6 +195,71 @@ class CM3000Driver(ModemDriver):
             self._log_status_page_diagnostics(r.text, "fetch")
             raise
         return r.text
+
+    def _login_via_form(self) -> bool:
+        """Try the newer Netgear web login flow used before DocsisStatus access."""
+        login_url = urljoin(f"{self._url}/", "Login.htm")
+        try:
+            r = self._session.get(login_url, timeout=30)
+            r.raise_for_status()
+            action, payload = self._extract_login_form(r.text)
+            if not action:
+                action = "/goform/Login"
+            payload = payload or {}
+            self._apply_login_credentials(payload)
+            if not any(v for k, v in payload.items() if "pass" in k.lower()):
+                payload["loginPassword"] = self._password
+            if not any(v for k, v in payload.items() if "user" in k.lower() or "name" in k.lower()):
+                payload["loginName"] = self._user
+            post_url = urljoin(f"{self._url}/", action.lstrip("/"))
+            r = self._session.post(post_url, data=payload, timeout=30)
+            r.raise_for_status()
+            return True
+        except requests.RequestException as exc:
+            log.debug("CM3000 form login failed: %s", exc)
+            return False
+
+    def _apply_login_credentials(self, payload: dict) -> None:
+        """Populate parsed login form fields with configured credentials."""
+        lowered = {k.lower(): k for k in payload}
+        user_keys = [k for k in payload if any(token in k.lower() for token in ("loginname", "username", "user", "name"))]
+        pass_keys = [k for k in payload if "pass" in k.lower()]
+        for key in user_keys:
+            payload[key] = self._user
+        for key in pass_keys:
+            payload[key] = self._password
+        if not user_keys and "loginname" not in lowered:
+            payload["loginName"] = self._user
+        if not pass_keys and "loginpassword" not in lowered:
+            payload["loginPassword"] = self._password
+
+    @staticmethod
+    def _extract_login_form(html: str) -> tuple[str | None, dict]:
+        """Extract login form action and input values from Login.htm."""
+        match = _RE_FORM_BLOCK.search(html or "")
+        if not match:
+            return None, {}
+        action = match.group("action").strip()
+        body = match.group("body")
+        payload = {}
+        for input_match in _RE_INPUT.finditer(body):
+            attrs = {
+                attr_match.group("name").lower(): attr_match.group("value")
+                for attr_match in _RE_ATTR.finditer(input_match.group("attrs"))
+            }
+            name = attrs.get("name")
+            if not name:
+                continue
+            input_type = attrs.get("type", "").lower()
+            if input_type in {"submit", "button", "image"}:
+                continue
+            payload[name] = attrs.get("value", "")
+        return action, payload
+
+    @staticmethod
+    def _looks_like_login_page(html: str) -> bool:
+        lower_html = (html or "").lower()
+        return any(marker in lower_html for marker in _LOGIN_MARKERS)
 
     @staticmethod
     def _ensure_status_page(html: str) -> None:
