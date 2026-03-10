@@ -197,6 +197,13 @@ class CM3000Driver(ModemDriver):
         if not html:
             raise RuntimeError("CM3000 returned an empty status page")
 
+        has_sys_info = _RE_SYS_INFO.search(html) is not None
+        has_channel_data = any(
+            regex.search(html) for regex in (_RE_DS_QAM, _RE_US_ATDMA, _RE_DS_OFDM, _RE_US_OFDMA)
+        )
+        if has_sys_info and has_channel_data:
+            return
+
         lower_html = html.lower()
         if any(marker in lower_html for marker in _LOGIN_MARKERS):
             raise RuntimeError(
@@ -204,10 +211,6 @@ class CM3000Driver(ModemDriver):
                 "of DocsisStatus.htm after authentication"
             )
 
-        has_sys_info = _RE_SYS_INFO.search(html) is not None
-        has_channel_data = any(
-            regex.search(html) for regex in (_RE_DS_QAM, _RE_US_ATDMA, _RE_DS_OFDM, _RE_US_OFDMA)
-        )
         if not has_sys_info or not has_channel_data:
             raise RuntimeError(
                 "CM3000 status page did not contain the expected DOCSIS data blocks"

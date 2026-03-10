@@ -273,6 +273,21 @@ class TestLogin:
             with pytest.raises(RuntimeError, match="returned a login page"):
                 driver.login()
 
+    def test_login_accepts_status_page_even_with_login_markers(self, driver):
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        mock_response.text = """
+            <script>
+            if (sessionStorage.getItem('PrivateKey') === null) {
+                window.location.replace('../Login.htm');
+            }
+            </script>
+        """ + STATUS_HTML
+
+        with patch.object(driver._session, "get", return_value=mock_response):
+            driver.login()
+            assert driver._status_html == mock_response.text
+
 
 # -- DOCSIS data: structure --
 
