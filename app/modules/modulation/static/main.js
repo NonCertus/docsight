@@ -521,8 +521,9 @@ function renderIntraday(data) {
             chHeader.appendChild(_el('span', 'mod-protocol-badge ' + healthClass(ch.health_index), hiText));
             card.appendChild(chHeader);
 
-            if (ch.summary) {
-                card.appendChild(_el('div', 'mod-channel-summary-text', ch.summary));
+            if (ch.degraded_events && ch.degraded_events.length) {
+                card.appendChild(buildIntradayInsights(ch));
+                card.appendChild(buildIntradayEventList(ch.degraded_events));
             } else {
                 card.appendChild(_el('div', 'mod-channel-summary-text',
                     T['docsight.modulation.no_degradation'] || 'No degradation observed'));
@@ -546,6 +547,65 @@ function renderIntraday(data) {
 
         container.appendChild(section);
     });
+}
+
+function buildIntradayInsights(ch) {
+    var wrap = _el('div', 'mod-channel-insights');
+    wrap.appendChild(_el(
+        'span',
+        'mod-channel-insight warning',
+        ch.degraded_events.length + ' ' + (T['docsight.modulation.degraded_windows'] || 'degraded windows')
+    ));
+    wrap.appendChild(_el(
+        'span',
+        'mod-channel-insight',
+        (T['docsight.modulation.affected_samples'] || 'Affected') + ' ' + (ch.degraded_sample_pct || 0) + '%'
+    ));
+    if (ch.worst_modulation) {
+        wrap.appendChild(_el(
+            'span',
+            'mod-channel-insight critical',
+            (T['docsight.modulation.worst_modulation'] || 'Worst') + ' ' + ch.worst_modulation
+        ));
+    }
+    return wrap;
+}
+
+function buildIntradayEventList(events) {
+    var wrap = _el('div', 'mod-event-list');
+    var visibleCount = Math.min(events.length, 4);
+    for (var i = 0; i < visibleCount; i++) {
+        wrap.appendChild(buildIntradayEvent(events[i]));
+    }
+
+    if (events.length > visibleCount) {
+        var more = _el(
+            'div',
+            'mod-event-more',
+            '+' + (events.length - visibleCount) + ' ' + (T['docsight.modulation.more_windows'] || 'more windows')
+        );
+        wrap.appendChild(more);
+    }
+    return wrap;
+}
+
+function buildIntradayEvent(evt) {
+    var row = _el('div', 'mod-event-row');
+    var timeText = evt.point_in_time ? evt.start : (evt.start + ' - ' + evt.end);
+    row.appendChild(_el('div', 'mod-event-time', timeText));
+
+    var detail = _el('div', 'mod-event-detail');
+    detail.appendChild(_el('span', 'mod-event-modulation', evt.label));
+    detail.appendChild(_el(
+        'span',
+        'mod-event-duration',
+        evt.point_in_time
+            ? (T['docsight.modulation.brief_dip'] || 'brief dip')
+            : evt.hours.toFixed(1) + 'h'
+    ));
+    row.appendChild(detail);
+    row.appendChild(_el('div', 'mod-event-share', evt.pct + '%'));
+    return row;
 }
 
 function renderChannelTimeline(canvasId, timeline) {

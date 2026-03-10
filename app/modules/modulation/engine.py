@@ -422,8 +422,14 @@ def compute_intraday(snapshots, direction, tz_name, date_str, low_qam_threshold=
                 [(l, q) for _, l, q in timeline], direction, version
             )
             degraded_threshold = _degraded_qam_threshold(direction, version, low_qam_threshold)
-            degraded = any(q is not None and q <= degraded_threshold for _, _, q in timeline)
+            degraded_events = _build_degraded_events(periods, degraded_threshold)
+            degraded = len(degraded_events) > 0
             summary = _channel_summary(periods, max_qam, degraded_threshold)
+            degraded_sample_pct = round(sum(evt["pct"] for evt in degraded_events))
+            worst_event = min(
+                degraded_events,
+                key=lambda evt: (evt["qam"], -evt["count"]),
+            ) if degraded_events else None
 
             # Simplify timeline to transition points only
             simplified = _simplify_timeline(timeline)
@@ -434,6 +440,9 @@ def compute_intraday(snapshots, direction, tz_name, date_str, low_qam_threshold=
                 "health_index": hi,
                 "degraded": degraded,
                 "summary": summary,
+                "degraded_events": degraded_events,
+                "degraded_sample_pct": degraded_sample_pct,
+                "worst_modulation": worst_event["label"] if worst_event else "",
                 "timeline": [{"time": t, "modulation": l} for t, l in simplified],
             })
 
@@ -525,6 +534,32 @@ def _channel_summary(periods, max_qam, threshold=16):
             parts.append(f"{hours}h ({pct}%) at {label} between {start}\u2013{end}")
 
     return "; ".join(parts)
+
+
+def _build_degraded_events(periods, threshold=16):
+    """Return structured degraded periods for UI rendering."""
+    degraded_periods = [
+        p for p in periods if p[3] is not None and p[3] <= threshold
+    ]
+    if not degraded_periods:
+        return []
+
+    total_obs = sum(p[4] for p in periods)
+    events = []
+    for start, end, label, qam, count in degraded_periods:
+        pct = round(count / total_obs * 100) if total_obs > 0 else 0
+        hours = round(count * 0.25, 1)
+        events.append({
+            "start": start,
+            "end": end,
+            "label": label,
+            "qam": qam,
+            "count": count,
+            "hours": hours,
+            "pct": pct,
+            "point_in_time": start == end,
+        })
+    return events
 
 
 # ── Legacy compat: keep old functions available for tests ────────────

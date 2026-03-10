@@ -681,6 +681,10 @@ class TestComputeIntraday:
         ch = pg["channels"][0]
         assert ch["degraded"] is True
         assert "128QAM" in ch["summary"]
+        assert ch["worst_modulation"] == "128QAM"
+        assert ch["degraded_sample_pct"] == 33
+        assert len(ch["degraded_events"]) == 1
+        assert ch["degraded_events"][0]["label"] == "128QAM"
 
 
 # ── Legacy compute_distribution (v1 compat) ──
