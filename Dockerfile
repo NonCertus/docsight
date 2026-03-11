@@ -23,12 +23,12 @@ RUN echo "${VERSION}" > /app/VERSION
 COPY --from=builder /install /usr/local
 COPY --from=builder /build/out/docsight-icmp-helper /usr/local/bin/docsight-icmp-helper
 
-# Keep CAP_NET_RAW scoped to the dedicated ICMP helper.
+# Keep elevated privileges scoped to the dedicated ICMP helper.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gosu \
-    libcap2-bin \
     libjpeg62-turbo \
-    && setcap cap_net_raw+ep /usr/local/bin/docsight-icmp-helper \
+    && chown root:root /usr/local/bin/docsight-icmp-helper \
+    && chmod 4755 /usr/local/bin/docsight-icmp-helper \
     && rm -rf /var/lib/apt/lists/*
 
 RUN adduser --disabled-password --gecos "" --uid 1000 appuser && \
