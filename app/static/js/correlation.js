@@ -935,7 +935,7 @@ function _setupCorrelationTooltip(overlay, octx) {
         if (st.segment && st.segment.length > 0) {
             var nearestSeg = null, segDist = Infinity;
             for (var si = 0; si < st.segment.length; si++) {
-                var sd = Math.abs(new Date(st.segment[si].timestamp).getTime() - hoverT);
+                var sd = Math.abs(new Date(st.segment[si].timestamp).getTime() - tHover);
                 if (sd < segDist) { segDist = sd; nearestSeg = st.segment[si]; }
             }
             if (nearestSeg && segDist < (st.tMax - st.tMin) * 0.05) {

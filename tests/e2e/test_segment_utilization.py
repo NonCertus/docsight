@@ -409,6 +409,29 @@ class TestSegmentCorrelation:
             text = legend.text_content()
             assert "Segment" in text, f"Legend should mention Segment, got: {text}"
 
+    def test_correlation_hover_shows_tooltip_and_highlights_timeline(self, fritzbox_page):
+        """Hovering the correlation chart should keep tooltip and timeline sync working with segment data."""
+        errors = []
+        fritzbox_page.on("pageerror", lambda err: errors.append(str(err)))
+        fritzbox_page.locator('a.nav-item[data-view="correlation"]').click()
+        fritzbox_page.wait_for_timeout(3000)
+
+        overlay = fritzbox_page.locator("canvas#correlation-overlay")
+        box = overlay.bounding_box()
+        assert box, "Correlation overlay should be present for hover interactions"
+
+        fritzbox_page.mouse.move(box["x"] + box["width"] * 0.55, box["y"] + box["height"] * 0.45)
+        fritzbox_page.wait_for_timeout(400)
+
+        tooltip = fritzbox_page.locator("#correlation-tooltip")
+        assert tooltip.is_visible(), "Correlation tooltip should appear on hover"
+
+        highlighted = fritzbox_page.locator("#correlation-tbody tr.corr-highlight")
+        assert highlighted.count() > 0, "Unified timeline should highlight at least one hovered entry"
+
+        hover_errors = [e for e in errors if "hoverT" in e or "undefined" in e.lower()]
+        assert len(hover_errors) == 0, f"Correlation hover should not raise JS errors: {hover_errors}"
+
 
 # ── View Div Presence ──
 
