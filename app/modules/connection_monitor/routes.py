@@ -233,12 +233,13 @@ def api_get_samples(target_id):
     limit = request.args.get("limit", 10000, type=int)
     resolution = request.args.get("resolution", "auto")
     max_points = request.args.get("max_points", type=int)
+    has_explicit_range = start is not None and end is not None
 
-    time_range = (end - start) if start is not None and end is not None else 0
+    time_range = (end - start) if has_explicit_range else 0
 
     # Determine resolution
     if resolution == "auto":
-        if time_range <= 86400:
+        if not has_explicit_range or time_range <= 86400:
             res_name, bucket_seconds, blended = "raw", None, False
         elif time_range <= _RAW_MAX_AGE:
             res_name, bucket_seconds, blended = "raw", None, True
@@ -256,7 +257,7 @@ def api_get_samples(target_id):
     # Fetch data
     samples = []
 
-    if resolution != "auto":
+    if resolution != "auto" or not has_explicit_range:
         if bucket_seconds is None:
             raw = storage.get_samples(target_id, start=start, end=end, limit=limit)
             _append_raw_samples(samples, raw)

@@ -291,6 +291,31 @@ class TestSamplesResolution:
         assert data["samples"][1]["min_latency_ms"] is not None
         assert data["samples"][2]["min_latency_ms"] is None
 
+    def test_auto_without_explicit_range_stays_raw_only(self, client):
+        """Without start/end, auto resolution should keep the legacy raw-only behavior."""
+        c, storage = client
+        tid = storage.create_target("Test", "1.1.1.1")
+        now = time.time()
+        storage.save_samples([
+            {"target_id": tid, "timestamp": now - 60, "latency_ms": 10.0, "timeout": False, "probe_method": "tcp"},
+        ])
+        with storage._connect() as conn:
+            conn.execute(
+                """INSERT INTO connection_samples_aggregated
+                   (target_id, bucket_start, bucket_seconds,
+                    avg_latency_ms, min_latency_ms, max_latency_ms,
+                    p95_latency_ms, packet_loss_pct, sample_count)
+                   VALUES (?, ?, 60, 15.0, 10.0, 20.0, 18.0, 0.0, 12)""",
+                (tid, now - 14 * 86400),
+            )
+        resp = c.get(f"/api/connection-monitor/samples/{tid}")
+        data = resp.get_json()
+        assert data["meta"]["resolution"] == "raw"
+        assert data["meta"]["blended"] is False
+        assert len(data["samples"]) == 1
+        assert data["samples"][0]["latency_ms"] == 10.0
+        assert data["samples"][0]["min_latency_ms"] is None
+
     def test_get_samples_with_max_points(self, client):
         c, storage = client
         tid = storage.create_target("Test", "1.1.1.1")
