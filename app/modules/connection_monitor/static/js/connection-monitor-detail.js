@@ -79,7 +79,6 @@
         pinIcon.style.cssText = 'width:12px;height:12px;';
         btn.appendChild(pinIcon);
         btn.appendChild(document.createTextNode('Pin this day'));
-        if (window.lucide) lucide.createIcons({nameAttr: 'data-lucide', nodes: [btn]});
         btn.onclick = function() {
             var ts = Math.floor(Date.now() / 1000);
             fetch('/api/connection-monitor/pinned-days', {
@@ -91,6 +90,7 @@
             });
         };
         parent.appendChild(btn);
+        if (window.lucide) window.lucide.createIcons({nameAttr: 'data-lucide', root: btn});
     }
 
     // --- Pinned Days Bar ---
