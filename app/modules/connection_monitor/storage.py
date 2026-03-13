@@ -1,6 +1,7 @@
 """SQLite storage for Connection Monitor targets and samples."""
 
 import logging
+import math
 import os
 import sqlite3
 import time
@@ -74,6 +75,43 @@ class ConnectionMonitorStorage:
                 CREATE INDEX IF NOT EXISTS idx_agg_target_bucket
                 ON connection_samples_aggregated (target_id, bucket_seconds, bucket_start)
             """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS connection_monitor_pinned_days (
+                    date TEXT NOT NULL PRIMARY KEY,
+                    label TEXT,
+                    created_at REAL NOT NULL
+                )
+            """)
+
+    # --- Pinned Days ---
+
+    def pin_day(self, date: str, label: str | None = None):
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT OR IGNORE INTO connection_monitor_pinned_days (date, label, created_at) VALUES (?, ?, ?)",
+                (date, label, time.time()),
+            )
+
+    def unpin_day(self, date: str) -> bool:
+        with self._connect() as conn:
+            cur = conn.execute(
+                "DELETE FROM connection_monitor_pinned_days WHERE date = ?", (date,)
+            )
+            return cur.rowcount > 0
+
+    def get_pinned_days(self) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM connection_monitor_pinned_days ORDER BY date DESC"
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def is_day_pinned(self, date: str) -> bool:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM connection_monitor_pinned_days WHERE date = ?", (date,)
+            ).fetchone()
+            return row is not None
 
     # --- Target CRUD ---
 
@@ -142,14 +180,12 @@ class ConnectionMonitorStorage:
                 samples,
             )
 
-    def get_samples(
+    def _build_sample_where(
         self,
         target_id: int,
         start: float | None = None,
         end: float | None = None,
-        limit: int = 10000,
-    ) -> list[dict]:
-        """Get samples for a target. limit <= 0 means no limit."""
+    ) -> tuple[str, list]:
         clauses = ["target_id = ?"]
         params: list = [target_id]
         if start is not None:
@@ -158,7 +194,18 @@ class ConnectionMonitorStorage:
         if end is not None:
             clauses.append("timestamp <= ?")
             params.append(end)
-        where = " AND ".join(clauses)
+        return " AND ".join(clauses), params
+
+    def get_samples(
+        self,
+        target_id: int,
+        start: float | None = None,
+        end: float | None = None,
+        limit: int = 10000,
+    ) -> list[dict]:
+        """Get samples for a target. limit <= 0 means no limit."""
+        where, params = self._build_sample_where(target_id, start=start, end=end)
+
         query = f"SELECT * FROM connection_samples WHERE {where} ORDER BY timestamp"
         if limit > 0:
             query += " LIMIT ?"
@@ -166,6 +213,50 @@ class ConnectionMonitorStorage:
         with self._connect() as conn:
             rows = conn.execute(query, params).fetchall()
             return [dict(r) for r in rows]
+
+    def get_range_stats(
+        self,
+        target_id: int,
+        start: float | None = None,
+        end: float | None = None,
+    ) -> dict:
+        where, params = self._build_sample_where(target_id, start=start, end=end)
+        with self._connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT
+                    COUNT(*) AS sample_count,
+                    COUNT(CASE WHEN timeout = 0 AND latency_ms IS NOT NULL THEN 1 END) AS latency_count,
+                    AVG(CASE WHEN timeout = 0 THEN latency_ms END) AS avg_latency_ms,
+                    MIN(CASE WHEN timeout = 0 THEN latency_ms END) AS min_latency_ms,
+                    MAX(CASE WHEN timeout = 0 THEN latency_ms END) AS max_latency_ms,
+                    ROUND(
+                        100.0 * SUM(CASE WHEN timeout = 1 THEN 1 ELSE 0 END) / MAX(COUNT(*), 1),
+                        2
+                    ) AS packet_loss_pct
+                FROM connection_samples
+                WHERE {where}
+                """,
+                params,
+            ).fetchone()
+            stats = dict(row) if row else {}
+            latency_count = stats.get("latency_count") or 0
+            if latency_count > 0:
+                p95_offset = max(0, math.ceil(latency_count * 0.95) - 1)
+                p95_row = conn.execute(
+                    f"""
+                    SELECT latency_ms
+                    FROM connection_samples
+                    WHERE {where} AND timeout = 0 AND latency_ms IS NOT NULL
+                    ORDER BY latency_ms
+                    LIMIT 1 OFFSET ?
+                    """,
+                    [*params, p95_offset],
+                ).fetchone()
+                stats["p95_latency_ms"] = p95_row["latency_ms"] if p95_row else None
+            else:
+                stats["p95_latency_ms"] = None
+            return stats
 
     # --- Summary ---
 
@@ -326,7 +417,9 @@ class ConnectionMonitorStorage:
                 created += 1
 
             conn.execute(
-                "DELETE FROM connection_samples WHERE target_id = ? AND timestamp < ?",
+                """DELETE FROM connection_samples WHERE target_id = ? AND timestamp < ?
+                   AND date(timestamp, 'unixepoch', 'localtime')
+                       NOT IN (SELECT date FROM connection_monitor_pinned_days)""",
                 (target_id, cutoff),
             )
 
@@ -460,7 +553,9 @@ class ConnectionMonitorStorage:
         cutoff = time.time() - (retention_days * 86400)
         with self._connect() as conn:
             cur = conn.execute(
-                "DELETE FROM connection_samples WHERE timestamp < ?",
+                """DELETE FROM connection_samples WHERE timestamp < ?
+                   AND date(timestamp, 'unixepoch', 'localtime')
+                       NOT IN (SELECT date FROM connection_monitor_pinned_days)""",
                 (cutoff,),
             )
             deleted = cur.rowcount

@@ -169,41 +169,98 @@ window.loadChannelTimeline = loadChannelTimeline;
 var _compareChannels = [];
 var _compareColors = ['#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
 var _compareChannelData = null;
+var _comparePreset = null;
 
-function loadCompareChannelList() {
-    var dir = getPillValue('compare-dir-tabs') || 'ds';
-    var sel = document.getElementById('compare-channel-select');
-    fetch('/api/channels')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            sel.innerHTML = '<option value="">' + (T.select_channel || 'Select Channel') + '</option>';
-            var channels = dir === 'ds' ? (data.ds_channels || []) : (data.us_channels || []);
-            channels.forEach(function(ch) {
-                var already = _compareChannels.some(function(c) { return c.id === ch.channel_id; });
-                if (already) return;
-                var opt = document.createElement('option');
-                opt.value = ch.channel_id;
-                opt.dataset.docsis = ch.docsis_version || '3.0';
-                opt.dataset.freq = ch.frequency || '';
-                var prefix = dir === 'ds' ? 'DS' : 'US';
-                opt.textContent = prefix + ' ' + ch.channel_id + ' (' + (ch.frequency || '') + ')';
-                sel.appendChild(opt);
-            });
-        })
-        .catch(function() {});
+function compareColor(index) {
+    if (index < _compareColors.length) return _compareColors[index];
+    return 'hsl(' + Math.round((index * 137.508) % 360) + ', 72%, 58%)';
 }
 
-function onCompareDirectionChange() {
-    _compareChannels = [];
-    renderCompareChips();
-    var chartsEl = document.getElementById('compare-charts');
+function getCompareDirection() {
+    return getPillValue('compare-dir-tabs') || 'ds';
+}
+
+function getComparePresetLabel(dir) {
+    return dir === 'ds'
+        ? (T.all_downstream || 'All Downstream')
+        : (T.all_upstream || 'All Upstream');
+}
+
+function buildCompareChannelEntry(ch, index, dir) {
+    var prefix = dir === 'ds' ? 'DS' : 'US';
+    return {
+        id: ch.channel_id,
+        label: prefix + ' ' + ch.channel_id + ' (' + (ch.frequency || '') + ')',
+        color: compareColor(index),
+        docsis: ch.docsis_version || '3.0'
+    };
+}
+
+function updateCompareActionLabels() {
+    var addAllBtn = document.getElementById('compare-add-all-btn');
+    if (addAllBtn) addAllBtn.textContent = getComparePresetLabel(getCompareDirection());
+}
+
+function showCompareError(message, error) {
+    var loadingEl = document.getElementById('compare-loading');
     var emptyEl = document.getElementById('compare-empty');
-    chartsEl.style.display = 'none';
-    emptyEl.style.display = 'none';
-    // Destroy existing compare charts
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (emptyEl) {
+        emptyEl.textContent = message;
+        emptyEl.style.display = '';
+    }
+    if (error) console.error('Channel compare error:', error);
+}
+
+function clearCompareCharts() {
+    document.getElementById('compare-charts').style.display = 'none';
+    document.getElementById('compare-loading').style.display = 'none';
     ['chart-cmp-power', 'chart-cmp-snr', 'chart-cmp-errors', 'chart-cmp-modulation'].forEach(function(id) {
         if (charts[id]) { charts[id].destroy(); delete charts[id]; }
     });
+}
+
+function populateCompareChannelList(data) {
+    var dir = getCompareDirection();
+    var sel = document.getElementById('compare-channel-select');
+    updateCompareActionLabels();
+    sel.innerHTML = '<option value="">' + (T.select_channel || 'Select Channel') + '</option>';
+    var channels = dir === 'ds' ? (data.ds_channels || []) : (data.us_channels || []);
+    channels.forEach(function(ch) {
+        var already = _compareChannels.some(function(c) { return c.id === ch.channel_id; });
+        if (already) return;
+        var opt = document.createElement('option');
+        opt.value = ch.channel_id;
+        opt.dataset.docsis = ch.docsis_version || '3.0';
+        opt.dataset.freq = ch.frequency || '';
+        var prefix = dir === 'ds' ? 'DS' : 'US';
+        opt.textContent = prefix + ' ' + ch.channel_id + ' (' + (ch.frequency || '') + ')';
+        sel.appendChild(opt);
+    });
+}
+
+function loadCompareChannelList(data) {
+    if (data) {
+        populateCompareChannelList(data);
+        return;
+    }
+    fetch('/api/channels')
+        .then(function(r) { return r.json(); })
+        .then(function(payload) {
+            populateCompareChannelList(payload);
+        })
+        .catch(function(error) {
+            showCompareError(T.trend_error || 'Error loading data.', error);
+        });
+}
+
+function onCompareDirectionChange() {
+    _comparePreset = null;
+    _compareChannels = [];
+    renderCompareChips();
+    var emptyEl = document.getElementById('compare-empty');
+    emptyEl.style.display = 'none';
+    clearCompareCharts();
     loadCompareChannelList();
 }
 window.onCompareDirectionChange = onCompareDirectionChange;
@@ -213,17 +270,18 @@ function addCompareChannel() {
     var opt = sel.options[sel.selectedIndex];
     if (!opt || !opt.value) return;
     if (_compareChannels.length >= 6) {
-        alert(T.max_channels_reached || 'Maximum 6 channels');
+        alert(T.max_channels_reached || 'Maximum 6 channels in manual selection');
         return;
     }
+    _comparePreset = null;
     var id = parseInt(opt.value);
     if (_compareChannels.some(function(c) { return c.id === id; })) return;
-    var dir = getPillValue('compare-dir-tabs') || 'ds';
+    var dir = getCompareDirection();
     var prefix = dir === 'ds' ? 'DS' : 'US';
     _compareChannels.push({
         id: id,
         label: prefix + ' ' + id + ' (' + (opt.dataset.freq || '') + ')',
-        color: _compareColors[_compareChannels.length],
+        color: compareColor(_compareChannels.length),
         docsis: opt.dataset.docsis || '3.0'
     });
     renderCompareChips();
@@ -232,19 +290,54 @@ function addCompareChannel() {
 }
 window.addCompareChannel = addCompareChannel;
 
+function addAllCompareChannels() {
+    var dir = getCompareDirection();
+    fetch('/api/channels')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var channels = dir === 'ds' ? (data.ds_channels || []) : (data.us_channels || []);
+            if (channels.length === 0) {
+                clearCompareChannels();
+                var emptyEl = document.getElementById('compare-empty');
+                emptyEl.textContent = T.no_channel_data || 'No data available.';
+                emptyEl.style.display = '';
+                return;
+            }
+            _comparePreset = 'all';
+            _compareChannels = channels.map(function(ch, index) {
+                return buildCompareChannelEntry(ch, index, dir);
+            });
+            renderCompareChips();
+            loadCompareChannelList(data);
+            loadCompareCharts();
+        })
+        .catch(function(error) {
+            showCompareError(T.trend_error || 'Error loading data.', error);
+        });
+}
+window.addAllCompareChannels = addAllCompareChannels;
+
+function clearCompareChannels() {
+    _comparePreset = null;
+    _compareChannels = [];
+    renderCompareChips();
+    document.getElementById('compare-empty').style.display = 'none';
+    clearCompareCharts();
+    loadCompareChannelList();
+}
+window.clearCompareChannels = clearCompareChannels;
+
 function removeCompareChannel(id) {
+    _comparePreset = null;
     _compareChannels = _compareChannels.filter(function(c) { return c.id !== id; });
     // Re-assign colors sequentially
-    _compareChannels.forEach(function(c, i) { c.color = _compareColors[i]; });
+    _compareChannels.forEach(function(c, i) { c.color = compareColor(i); });
     renderCompareChips();
     loadCompareChannelList();
     if (_compareChannels.length > 0) {
         loadCompareCharts();
     } else {
-        document.getElementById('compare-charts').style.display = 'none';
-        ['chart-cmp-power', 'chart-cmp-snr', 'chart-cmp-errors', 'chart-cmp-modulation'].forEach(function(id) {
-            if (charts[id]) { charts[id].destroy(); delete charts[id]; }
-        });
+        clearCompareCharts();
     }
 }
 window.removeCompareChannel = removeCompareChannel;
@@ -252,6 +345,15 @@ window.removeCompareChannel = removeCompareChannel;
 function renderCompareChips() {
     var container = document.getElementById('compare-chips');
     container.innerHTML = '';
+    if (_comparePreset === 'all' && _compareChannels.length > 0) {
+        var presetChip = document.createElement('span');
+        presetChip.className = 'compare-chip';
+        presetChip.style.backgroundColor = getCompareDirection() === 'ds' ? '#3b82f6' : '#10b981';
+        presetChip.innerHTML = escapeHtml(getComparePresetLabel(getCompareDirection()) + ' (' + _compareChannels.length + ')')
+            + ' <button class="compare-chip-remove" onclick="clearCompareChannels()">&times;</button>';
+        container.appendChild(presetChip);
+        return;
+    }
     _compareChannels.forEach(function(ch) {
         var chip = document.createElement('span');
         chip.className = 'compare-chip';
@@ -271,7 +373,7 @@ function loadCompareCharts() {
         emptyEl.style.display = '';
         return;
     }
-    var dir = getPillValue('compare-dir-tabs') || 'ds';
+    var dir = getCompareDirection();
     var days = getPillValue('compare-time-tabs') || '7';
     var ids = _compareChannels.map(function(c) { return c.id; }).join(',');
 
@@ -303,6 +405,7 @@ function loadCompareCharts() {
                 if (parseInt(days) <= 1) return ts.substring(11, 16);
                 return ts.substring(5, 16).replace('T', ' ');
             });
+            var showPoints = _compareChannels.length <= 6;
 
             // Build lookup maps per channel: timestamp -> data point
             var lookups = {};
@@ -317,7 +420,8 @@ function loadCompareCharts() {
                 return {
                     label: 'CH ' + ch.id,
                     data: timestamps.map(function(ts) { var d = lookups[ch.id][ts]; return d ? d.power : null; }),
-                    color: ch.color
+                    color: ch.color,
+                    showPoints: showPoints
                 };
             });
             var powerThresholds = dir === 'ds' ? DS_POWER_THRESHOLDS : US_POWER_THRESHOLDS;
@@ -331,7 +435,8 @@ function loadCompareCharts() {
                     return {
                         label: 'CH ' + ch.id,
                         data: timestamps.map(function(ts) { var d = lookups[ch.id][ts]; return d ? d.snr : null; }),
-                        color: ch.color
+                        color: ch.color,
+                        showPoints: showPoints
                     };
                 });
                 renderChart('chart-cmp-snr', xLabels, snrDatasets, null, DS_SNR_THRESHOLDS);
@@ -348,13 +453,15 @@ function loadCompareCharts() {
                     errorDatasets.push({
                         label: 'CH ' + ch.id + ' ' + (T.uncorrectable || 'Uncorr.'),
                         data: timestamps.map(function(ts) { var d = lookups[ch.id][ts]; return d ? d.uncorrectable_errors : null; }),
-                        color: ch.color
+                        color: ch.color,
+                        showPoints: showPoints
                     });
                     errorDatasets.push({
                         label: 'CH ' + ch.id + ' ' + (T.correctable || 'Corr.'),
                         data: timestamps.map(function(ts) { var d = lookups[ch.id][ts]; return d ? d.correctable_errors : null; }),
                         color: ch.color,
-                        dashed: true
+                        dashed: true,
+                        showPoints: showPoints
                     });
                 });
                 renderChart('chart-cmp-errors', xLabels, errorDatasets);
@@ -398,7 +505,8 @@ function loadCompareCharts() {
                             return qamMap[d.modulation] !== undefined ? qamMap[d.modulation] : null;
                         }),
                         color: ch.color,
-                        stepped: true
+                        stepped: true,
+                        showPoints: false
                     };
                 });
                 var tickValues = [];
