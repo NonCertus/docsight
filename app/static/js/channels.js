@@ -109,11 +109,19 @@ function initChannelView() {
                         renderCompareChips();
                         populateCompareChannelList(data);
                         if (_compareChannels.length > 0) loadCompareCharts();
-                        else writeChannelHash();
+                        else {
+                            var emptyEl = document.getElementById('compare-empty');
+                            emptyEl.textContent = T.no_channels_selected || 'Select channels to compare';
+                            emptyEl.style.display = '';
+                            writeChannelHash();
+                        }
                     })
                     .catch(function() { writeChannelHash(); });
             } else {
                 loadCompareChannelList();
+                var emptyEl = document.getElementById('compare-empty');
+                emptyEl.textContent = T.no_channels_selected || 'Select channels to compare';
+                emptyEl.style.display = '';
                 writeChannelHash();
             }
         } else {
@@ -136,11 +144,22 @@ function switchChannelMode() {
         if (timelineControls) timelineControls.style.display = 'none';
         if (compareControls) compareControls.style.display = 'contents';
         loadCompareChannelList();
+        if (_compareChannels.length === 0) {
+            var emptyEl = document.getElementById('compare-empty');
+            emptyEl.textContent = T.no_channels_selected || 'Select channels to compare';
+            emptyEl.style.display = '';
+        }
     } else {
         timelinePanel.style.display = '';
         comparePanel.style.display = 'none';
         if (timelineControls) timelineControls.style.display = 'contents';
         if (compareControls) compareControls.style.display = 'none';
+        var sel = document.getElementById('channel-select');
+        if (!sel || !sel.value) {
+            var chEmpty = document.getElementById('channel-empty');
+            chEmpty.textContent = T.channel_select_prompt || 'Select a channel above to view its signal history.';
+            chEmpty.style.display = '';
+        }
     }
     writeChannelHash();
 }
@@ -196,7 +215,9 @@ function loadChannelTimeline() {
     var loadingEl = document.getElementById('channel-loading');
     if (!val) {
         chartsEl.style.display = 'none';
-        emptyEl.style.display = 'none';
+        loadingEl.style.display = 'none';
+        emptyEl.textContent = T.channel_select_prompt || 'Select a channel above to view its signal history.';
+        emptyEl.style.display = '';
         return;
     }
     var parts = val.split('-');
@@ -529,7 +550,7 @@ function loadCompareCharts() {
             });
             var timestamps = Object.keys(tsSet).sort();
             if (timestamps.length === 0) {
-                emptyEl.textContent = T.no_channel_data || 'No data available.';
+                emptyEl.textContent = T.compare_no_data_range || 'No data for the selected channels in this time range.';
                 emptyEl.style.display = '';
                 return;
             }
