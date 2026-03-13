@@ -59,8 +59,14 @@ function initChannelView() {
     var params = parseChannelHash();
     loadChannelList(function() {
         if (!params.mode) {
-            var mode = getPillValue('channel-mode-tabs') || 'timeline';
-            if (mode === 'compare') loadCompareChannelList();
+            // No hash params → reset to defaults (timeline, no selection, 7d)
+            setPillByValue('channel-mode-tabs', 'timeline');
+            setPillByValue('channel-time-tabs', '7');
+            var sel = document.getElementById('channel-select');
+            if (sel) sel.value = '';
+            _compareChannels = [];
+            _comparePreset = null;
+            switchChannelMode();
             writeChannelHash();
             return;
         }
