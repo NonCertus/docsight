@@ -25,44 +25,34 @@ class TestMobileLayout:
         box = sidebar.bounding_box()
         assert box is None or box["x"] + box["width"] <= 0
 
-    def test_bottom_nav_visible_on_mobile(self, mobile_page):
-        bottom_nav = mobile_page.locator("nav.bottom-nav")
-        assert bottom_nav.is_visible()
+    def test_mobile_header_visible(self, mobile_page):
+        header = mobile_page.locator(".mobile-header")
+        assert header.is_visible()
 
-    def test_bottom_nav_has_tabs(self, mobile_page):
-        tabs = mobile_page.locator(".bottom-nav-item")
-        assert tabs.count() >= 4
-
-    def test_mobile_nav_customization_updates_sidebar_and_bottom_bar(self, mobile_page):
+    def test_hamburger_opens_sidebar(self, mobile_page):
         mobile_page.locator("#hamburger").click()
-        mobile_page.get_by_role("button", name="Customize Navigation").click()
+        mobile_page.wait_for_timeout(300)
+        sidebar = mobile_page.locator("nav.sidebar")
+        box = sidebar.bounding_box()
+        assert box is not None and box["x"] >= 0
 
-        modal = mobile_page.locator("#nav-customize-overlay.open")
-        modal.wait_for()
+    def test_primary_nav_items_in_sidebar(self, mobile_page):
+        mobile_page.locator("#hamburger").click()
+        mobile_page.wait_for_timeout(300)
+        nav_items = mobile_page.locator(
+            '.nav-section[data-nav-section="monitoring"] .nav-item'
+        )
+        assert nav_items.count() >= 4
 
-        comparison_row = modal.locator(".nav-customize-row").filter(
-            has_text="Before/After Comparison"
-        ).first
-        comparison_row.locator('button[data-nav-action="toggle-pin"]').click()
-        mobile_page.wait_for_timeout(150)
-
-        bottom_labels = mobile_page.locator(".bottom-nav-item span").all_inner_texts()
-        assert "Before/After Comparison" in bottom_labels
-        assert bottom_labels[-1] == "More"
-
-        channels_row = modal.locator(".nav-customize-row").filter(
-            has_text="Channels"
-        ).first
-        channels_row.locator('button[data-nav-action="move-up"]').click()
-        mobile_page.wait_for_timeout(150)
-
-        modal.get_by_role("button", name="Done").click()
-        mobile_page.wait_for_timeout(150)
-
-        monitoring_texts = [
-            text.strip()
-            for text in mobile_page.locator(
-                '.nav-section[data-nav-section="monitoring"] .nav-section-items > .nav-item'
-            ).all_inner_texts()
-        ]
-        assert monitoring_texts.index("Channels") < monitoring_texts.index("Signal Trends")
+    def test_analysis_section_collapsible(self, mobile_page):
+        mobile_page.locator("#hamburger").click()
+        mobile_page.wait_for_timeout(300)
+        analysis = mobile_page.locator(
+            '.nav-section[data-nav-section="analysis"]'
+        )
+        if analysis.count() > 0:
+            toggle = analysis.locator(".nav-group-toggle")
+            toggle.click()
+            mobile_page.wait_for_timeout(200)
+            items = analysis.locator(".nav-section-items .nav-item")
+            assert items.count() >= 1

@@ -23,11 +23,11 @@ class TestSettingsTabSwitching:
     """Clicking sidebar tabs shows the correct panel."""
 
     @pytest.mark.parametrize("section", [
-        "system",
+        "general",
         "security",
         "appearance",
         "notifications",
-        "modules",
+        "extensions",
     ])
     def test_switch_to_section(self, settings_page, section):
         btn = settings_page.locator(f'button[data-section="{section}"]')
@@ -36,7 +36,7 @@ class TestSettingsTabSwitching:
         assert panel.is_visible()
 
     def test_switch_back_to_connection(self, settings_page):
-        settings_page.locator('button[data-section="system"]').click()
+        settings_page.locator('button[data-section="general"]').click()
         settings_page.locator('button[data-section="connection"]').click()
         panel = settings_page.locator("#panel-connection")
         assert panel.is_visible()
