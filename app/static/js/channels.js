@@ -97,6 +97,8 @@ function initChannelView() {
             setPillByValue('compare-time-tabs', params.days || '7');
             _compareChannels = [];
             _comparePreset = null;
+            _compareState.ds = { channels: [], preset: null };
+            _compareState.us = { channels: [], preset: null };
             updateCompareActionLabels();
             if (params.preset === 'all') {
                 addAllCompareChannels();
