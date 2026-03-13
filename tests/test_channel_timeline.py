@@ -120,6 +120,26 @@ class TestGetChannelHistory:
         assert len(result_30) == 2
 
 
+    def test_string_channel_id_matches(self, storage):
+        """Drivers like Vodafone Station store channelID as string.
+        Ensure channel history still matches when channel_id is stored as str."""
+        ds = [
+            {"channel_id": "1", "frequency": "114.0 MHz", "power": 5.2,
+             "modulation": "256QAM", "snr": 38.1, "correctable_errors": 10,
+             "uncorrectable_errors": 2, "docsis_version": "3.0",
+             "health": "good", "health_detail": ""},
+        ]
+        us = [
+            {"channel_id": "1", "frequency": "37 MHz", "power": 42.0,
+             "modulation": "64QAM", "multiplex": "ATDMA",
+             "docsis_version": "3.0", "health": "good", "health_detail": ""},
+        ]
+        storage.save_snapshot(_make_analysis(ds_channels=ds, us_channels=us))
+        result = storage.get_channel_history(1, "ds", days=7)
+        assert len(result) == 1
+        assert result[0]["power"] == 5.2
+
+
 class TestGetCurrentChannels:
     def test_returns_channels(self, storage):
         storage.save_snapshot(_make_analysis())

@@ -145,7 +145,11 @@ class AnalysisMixin:
         for ts, channels_json in rows:
             channels = json.loads(channels_json)
             for ch in channels:
-                if ch.get("channel_id") == channel_id:
+                try:
+                    stored_id = int(ch.get("channel_id", 0))
+                except (ValueError, TypeError):
+                    stored_id = ch.get("channel_id")
+                if stored_id == channel_id:
                     results.append({
                         "timestamp": ts,
                         "power": ch.get("power"),
@@ -174,7 +178,10 @@ class AnalysisMixin:
         for ts, channels_json in rows:
             channels = json.loads(channels_json)
             for ch in channels:
-                cid = ch.get("channel_id")
+                try:
+                    cid = int(ch.get("channel_id", 0))
+                except (ValueError, TypeError):
+                    cid = ch.get("channel_id")
                 if cid in channel_set:
                     results[cid].append({
                         "timestamp": ts,

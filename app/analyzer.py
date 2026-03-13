@@ -381,7 +381,7 @@ def analyze(data: dict) -> dict:
         health, health_detail = _assess_ds_channel(ch, "3.0")
         metric_h = _metric_healths(health_detail.split(" + ") if health_detail else [])
         channel = {
-            "channel_id": ch.get("channelID", 0),
+            "channel_id": int(ch.get("channelID", 0)),
             "frequency": ch.get("frequency", ""),
             "power": power,
             "modulation": ch.get("modulation") or ch.get("type", ""),
@@ -403,7 +403,7 @@ def analyze(data: dict) -> dict:
         health, health_detail = _assess_ds_channel(ch, "3.1")
         metric_h = _metric_healths(health_detail.split(" + ") if health_detail else [])
         channel = {
-            "channel_id": ch.get("channelID", 0),
+            "channel_id": int(ch.get("channelID", 0)),
             "frequency": ch.get("frequency", ""),
             "power": power,
             "modulation": ch.get("modulation") or ch.get("type", ""),
@@ -429,7 +429,7 @@ def analyze(data: dict) -> dict:
         mod = ch.get("modulation") or ch.get("type", "")
         bitrate = _channel_bitrate_mbps(mod, ch.get("symbolRate"))
         channel = {
-            "channel_id": ch.get("channelID", 0),
+            "channel_id": int(ch.get("channelID", 0)),
             "frequency": ch.get("frequency", ""),
             "power": _parse_float(ch.get("powerLevel")),
             "modulation": mod,
@@ -450,7 +450,7 @@ def analyze(data: dict) -> dict:
         bitrate = _channel_bitrate_mbps(mod, ch.get("symbolRate"))
         raw_power = ch.get("powerLevel")
         channel = {
-            "channel_id": ch.get("channelID", 0),
+            "channel_id": int(ch.get("channelID", 0)),
             "frequency": ch.get("frequency", ""),
             "power": _parse_float(raw_power) if raw_power is not None else None,
             "modulation": mod,

@@ -100,6 +100,7 @@ function loadChannelTimeline() {
             var xLabels = data.map(function(d) {
                 if (!d.timestamp) return '';
                 if (parseInt(days) <= 1) return d.timestamp.substring(11, 16);
+                if (parseInt(days) >= 30) return d.timestamp.substring(5, 10);
                 return d.timestamp.substring(5, 16).replace('T', ' ');
             });
             var powerDatasets = [{label: T.power_dbmv || 'Power (dBmV)', data: data.map(function(d){ return d.power; }), color: '#00e5f0'}];
@@ -140,7 +141,10 @@ function loadChannelTimeline() {
                 else { qamSteps = is31 ? dsQam31 : dsQam30; }
                 var qamLabel = {}; qamSteps.forEach(function(v) { qamLabel[v] = v + 'QAM'; });
                 var qamMap = {}; qamSteps.forEach(function(v, i) { qamMap[v + 'QAM'] = i; });
-                var modLabels = mods.map(function(d) { return d.timestamp.substring(5, 16).replace('T', ' '); });
+                var modLabels = mods.map(function(d) {
+                    if (parseInt(days) >= 30) return d.timestamp.substring(5, 10);
+                    return d.timestamp.substring(5, 16).replace('T', ' ');
+                });
                 var modValues = mods.map(function(d) { return qamMap[d.modulation] !== undefined ? qamMap[d.modulation] : -1; });
                 var tickValues = [];
                 for (var qi = 0; qi < qamSteps.length; qi++) tickValues.push(qi);
@@ -403,6 +407,7 @@ function loadCompareCharts() {
 
             var xLabels = timestamps.map(function(ts) {
                 if (parseInt(days) <= 1) return ts.substring(11, 16);
+                if (parseInt(days) >= 30) return ts.substring(5, 10);
                 return ts.substring(5, 16).replace('T', ' ');
             });
             var showPoints = _compareChannels.length <= 6;
