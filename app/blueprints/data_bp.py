@@ -133,10 +133,14 @@ def api_export():
         "|----|-----------|-------------|----------|------------|-------------|---------------|--------|--------|",
     ]
     for ch in ds:
+        corr = ch.get("correctable_errors")
+        uncorr = ch.get("uncorrectable_errors")
+        err_corr = f"{corr:,}" if corr is not None else "-"
+        err_uncorr = f"{uncorr:,}" if uncorr is not None else "-"
         lines.append(
             f"| {ch.get('channel_id','')} | {ch.get('frequency','')} | {ch.get('power','')} "
             f"| {ch.get('snr', '-')} | {ch.get('modulation','')} "
-            f"| {ch.get('correctable_errors', 0):,} | {ch.get('uncorrectable_errors', 0):,} "
+            f"| {err_corr} | {err_uncorr} "
             f"| {ch.get('docsis_version','')} | {ch.get('health','')} |"
         )
     lines += [
