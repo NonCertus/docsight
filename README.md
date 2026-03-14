@@ -7,33 +7,66 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/itsDNNS/docsight" alt="License"></a>
   <a href="https://github.com/itsDNNS/docsight/pkgs/container/docsight"><img src="https://img.shields.io/github/v/tag/itsDNNS/docsight?label=version" alt="Version"></a>
-  <a href="https://ko-fi.com/itsdnns"><img src="https://img.shields.io/badge/Ko--fi-Support%20DOCSight-ff5e5b?logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
-  <a href="https://paypal.me/itsDNNS"><img src="https://img.shields.io/badge/Donate-PayPal-00457C?logo=paypal&logoColor=white" alt="PayPal"></a>
   <a href="https://github.com/itsDNNS/docsight/stargazers"><img src="https://img.shields.io/github/stars/itsDNNS/docsight?style=flat" alt="Stars"></a>
+  <a href="https://github.com/itsDNNS/docsight/pkgs/container/docsight"><img src="https://ghcr-badge.egpl.dev/itsdnns/docsight/size" alt="Image Size"></a>
   <a href="https://selfh.st/weekly/2026-02-27/"><img src="https://img.shields.io/badge/selfh.st-Featured-blue" alt="Featured in selfh.st Weekly"></a>
+</p>
+
+<p align="center">
+  <strong>Your ISP says everything is fine. DOCSight gives you the proof that it isn't.</strong>
+</p>
+
+<p align="center">
+  DOCSight monitors your cable internet 24/7, documents every signal issue, and generates complaint letters with hard evidence your provider can't dismiss.
 </p>
 
 <p align="center">
   Available in 🇬🇧 🇩🇪 🇪🇸 🇫🇷
 </p>
 
-<p align="center">
-  <strong>Your cable internet is slow and your provider says everything is fine?<br>DOCSight proves them wrong.</strong>
-</p>
+![Dashboard](docs/screenshots/dashboard-dark.png)
 
-<p align="center">
-  DOCSight monitors your cable internet connection 24/7 and collects the hard evidence you need to hold your ISP accountable. One click generates a complaint letter with real data your provider can't ignore.
-</p>
+---
 
-<p align="center">
-  <em>Built for cable internet (DOCSIS/coax) — also works with fiber, DSL, and satellite via Generic Router mode.</em>
-</p>
+## Try It Now
 
-<p align="center">
-  <sub><strong>DOCSight</strong> = <strong>DOCS</strong>IS + In<strong>sight</strong> (+ a quiet <em>sigh</em> from every cable internet user)</sub>
-</p>
+No router needed. Demo mode generates 9 months of realistic DOCSIS data so you can explore everything.
 
-![Dashboard Dark Mode](docs/screenshots/dashboard-dark.png)
+```bash
+docker run -d --name docsight-demo -p 8765:8765 -e DEMO_MODE=true ghcr.io/itsdnns/docsight:latest
+```
+
+Open `http://localhost:8765` and see what DOCSight can do.
+
+---
+
+## What DOCSight Does
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+**Monitor**
+
+Tracks every DOCSIS signal metric around the clock: downstream power, upstream power, SNR, modulation, error rates, latency, and speed. Detects anomalies automatically.
+
+</td>
+<td width="33%" valign="top">
+
+**Document**
+
+Builds a timeline of evidence: signal trends, event log, incident journal, before/after comparisons, correlation analysis. Every issue is recorded with timestamps and data.
+
+</td>
+<td width="33%" valign="top">
+
+**Act**
+
+Generates ISP complaint letters backed by real measurements. One click creates a technical PDF with diagnostic data your provider has to take seriously.
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -43,27 +76,9 @@
 docker run -d --name docsight -p 8765:8765 -v docsight_data:/data ghcr.io/itsdnns/docsight:latest
 ```
 
-Open `http://localhost:8765`, enter your router login, done. [Full installation guide →](https://github.com/itsDNNS/docsight/wiki/Installation) · [Example Compose Stacks →](https://github.com/itsDNNS/docsight/wiki/Example-Compose-Stacks)
+Open `http://localhost:8765`, enter your router login, done.
 
----
-
-## 🎮 Demo Mode
-
-Want to try DOCSight without a real router? Demo mode generates realistic DOCSIS data so you can explore the full dashboard, trends, event log, and incident journal.
-
-```bash
-docker run -d --name docsight-demo -p 8765:8765 -e DEMO_MODE=true ghcr.io/itsdnns/docsight:latest
-```
-
-Open `http://localhost:8765` — no setup required.
-
-**What you get:**
-- 25 downstream + 4 upstream channels with realistic signal values
-- 9 months of historical data with diurnal and seasonal patterns
-- Pre-populated event log, journal entries (12), incident groups (3), and speedtest history
-- Full trend charts, channel timeline, channel compare, and correlation analysis
-- Switch to live mode anytime (Settings > Migrate) -- your own entries are preserved
-- Works with MQTT (if configured)
+[Full installation guide](https://github.com/itsDNNS/docsight/wiki/Installation) | [Example Compose Stacks](https://github.com/itsDNNS/docsight/wiki/Example-Compose-Stacks)
 
 ---
 
@@ -71,7 +86,7 @@ Open `http://localhost:8765` — no setup required.
 
 | | |
 |---|---|
-| ✅ You have **cable internet** (coax/DOCSIS) | DOCSight is built for this — full signal monitoring |
+| ✅ You have **cable internet** (coax/DOCSIS) | DOCSight is built for this - full signal monitoring |
 | ✅ You have **fiber, DSL, or satellite** | Generic Router mode gives you speedtest tracking, incident journal, and more |
 | ✅ Your internet **drops out or is slower** than what you're paying for | DOCSight documents it |
 | ✅ Your ISP says **"everything is fine on our end"** | DOCSight gives you proof |
@@ -93,32 +108,32 @@ Open `http://localhost:8765` — no setup required.
 
 | Feature | Description |
 |---|---|
-| **[Live Dashboard](https://github.com/itsDNNS/docsight/wiki/Features-Dashboard)** | Real-time channel data with health assessment, metric cards, and compact mode with expandable channel details |
+| **[Live Dashboard](https://github.com/itsDNNS/docsight/wiki/Features-Dashboard)** | Real-time channel data with health assessment, actionable insights, and expandable channel details |
 | **[Signal Trends](https://github.com/itsDNNS/docsight/wiki/Features-Signal-Trends)** | Interactive charts with DOCSIS reference zones (day/week/month) |
-| **[Before/After Comparison](https://github.com/itsDNNS/docsight/wiki/Features-Before-After-Comparison)** | Compare two time periods side by side with presets, delta summaries, health distribution, and complaint-ready evidence |
+| **[Before/After Comparison](https://github.com/itsDNNS/docsight/wiki/Features-Before-After-Comparison)** | Compare two time periods side by side with presets, delta summaries, and complaint-ready evidence |
 | **[Correlation Analysis](https://github.com/itsDNNS/docsight/wiki/Features-Correlation-Analysis)** | Unified timeline combining signal, speedtest, and event data |
-| **[Gaming Quality Index](https://github.com/itsDNNS/docsight/wiki/Features-Gaming-Quality)** | **NEW:** A-F grade for gaming readiness based on latency, jitter, and signal health |
-| **[Modulation Performance](https://github.com/itsDNNS/docsight/wiki/Features-Modulation-Performance)** | **NEW:** Per-protocol-group modulation health index with intraday channel drill-down |
-| **[In-App Glossary](https://github.com/itsDNNS/docsight/wiki/Features-Glossary)** | Contextual help popovers explaining DOCSIS terminology directly on the dashboard |
+| **[Connection Monitor](https://github.com/itsDNNS/docsight/wiki/Features-Connection-Monitor)** | Always-on latency monitor with outage detection, packet loss tracking, and CSV evidence export |
+| **[Gaming Quality Index](https://github.com/itsDNNS/docsight/wiki/Features-Gaming-Quality)** | A-F grade for gaming readiness based on latency, jitter, and signal health |
+| **[Modulation Performance](https://github.com/itsDNNS/docsight/wiki/Features-Modulation-Performance)** | Per-protocol-group modulation health index with intraday channel drill-down |
 | **[Cable Segment Utilization](https://github.com/itsDNNS/docsight/wiki/Features-Segment-Utilization)** | FRITZ!Box cable segment load monitoring with downstream/upstream utilization charts |
-| **[Connection Monitor](https://github.com/itsDNNS/docsight/wiki/Features-Connection-Monitor)** | **NEW:** Always-on latency monitor with PingPlotter-style charts, outage detection, packet loss tracking, and CSV evidence export |
 | **[Event Log](https://github.com/itsDNNS/docsight/wiki/Features-Event-Log)** | Automatic anomaly detection with modulation watchdog |
+| **[Incident Journal](https://github.com/itsDNNS/docsight/wiki/Features-Incident-Journal)** | Document ISP issues with icons, Excel/CSV import, attachments, incident groups, and export |
+| **[Complaint Generator](https://github.com/itsDNNS/docsight/wiki/Filing-a-Complaint)** | Editable ISP letter + downloadable technical PDF with diagnostic notes and comparison evidence |
+| **[Channel Timeline](https://github.com/itsDNNS/docsight/wiki/Features-Channel-Timeline)** | Per-channel power, SNR, error, and modulation history with multi-channel comparison overlay |
 | **[Speedtest Integration](https://github.com/itsDNNS/docsight/wiki/Features-Speedtest)** | Speed test history from [Speedtest Tracker](https://github.com/alexjustesen/speedtest-tracker) |
-| **[Incident Journal](https://github.com/itsDNNS/docsight/wiki/Features-Incident-Journal)** | Document ISP issues with icons, Excel/CSV import, search, attachments, **incident groups**, and export (CSV/JSON/Markdown) |
-| **[Complaint Generator](https://github.com/itsDNNS/docsight/wiki/Filing-a-Complaint)** | Editable ISP letter + downloadable technical PDF with diagnostic notes and optional active comparison evidence |
-| **[Channel Timeline](https://github.com/itsDNNS/docsight/wiki/Features-Channel-Timeline)** | Per-channel power, SNR, error, and modulation history over time with multi-channel comparison overlay |
+| **[BNetzA Measurements](https://github.com/itsDNNS/docsight/wiki/Features-BNetzA)** | Upload or auto-import official BNetzA broadband measurement protocols (PDF/CSV) |
 | **[Home Assistant](https://github.com/itsDNNS/docsight/wiki/Home-Assistant)** | MQTT Auto-Discovery with per-channel sensors |
+| **[In-App Glossary](https://github.com/itsDNNS/docsight/wiki/Features-Glossary)** | Contextual help explaining DOCSIS terminology directly on the dashboard |
+| **[Theme Engine](https://github.com/itsDNNS/docsight/wiki/Themes)** | Built-in themes with live preview, instant switching, and community theme registry |
+| **[Community Modules](https://github.com/itsDNNS/docsight-modules)** | Extend DOCSight with community-built modules |
 | **[BQM Integration](https://github.com/itsDNNS/docsight/wiki/Features-BQM)** | ThinkBroadband broadband quality graphs |
-| **[BNetzA Measurements](https://github.com/itsDNNS/docsight/wiki/Features-BNetzA)** | **NEW:** Upload or auto-import official BNetzA broadband measurement protocols (PDF/CSV) with file watcher and sidecar support |
-| **[Smokeping Integration](https://github.com/itsDNNS/docsight/wiki/Features-Smokeping)** | Optional external latency graphs from your Smokeping instance |
-| **[Backup & Restore](https://github.com/itsDNNS/docsight/wiki/Backup-and-Restore)** | One-click backup download, scheduled automatic backups, restore from setup wizard |
+| **[Smokeping Integration](https://github.com/itsDNNS/docsight/wiki/Features-Smokeping)** | External latency graphs from your Smokeping instance |
+| **[Backup & Restore](https://github.com/itsDNNS/docsight/wiki/Backup-and-Restore)** | One-click backup, scheduled backups, restore from setup wizard |
 | **Notifications** | Alerts via webhook, ntfy, Discord, Gotify, and custom endpoints |
 | **[LLM Export](https://github.com/itsDNNS/docsight/wiki/Features-LLM-Export)** | Structured reports for AI analysis |
-| **[Demo Mode](https://github.com/itsDNNS/docsight/wiki/Features-Demo-Mode)** | Try DOCSight without a router — 9 months of simulated data with live migration |
-| **[Theme Engine](https://github.com/itsDNNS/docsight/wiki/Themes)** | **NEW:** 3 built-in themes (Classic, Ocean, Tribu) with live preview, instant switching, and community theme registry |
-| **[Community Modules](https://github.com/itsDNNS/docsight-modules)** | Extend DOCSight with community-built modules — data collectors, integrations, analysis tools, and themes |
+| **[Demo Mode](https://github.com/itsDNNS/docsight/wiki/Features-Demo-Mode)** | Try DOCSight without a router - 9 months of simulated data with live migration |
 
-4 languages (EN/DE/FR/ES) · Light/Dark mode · Themes · PWA/Offline · Setup wizard · Optional authentication · API token auth for external clients
+4 languages (EN/DE/FR/ES) | Light/Dark mode | Themes | PWA/Offline | Setup wizard | Optional authentication | API tokens
 
 ---
 
@@ -161,27 +176,29 @@ Open `http://localhost:8765` — no setup required.
 
 ## Supported Hardware
 
+15 modem families supported out of the box.
+
 | | Status | Notes |
 |---|---|---|
-| **Arris CM3500B** | ✅ Fully supported | HTTPS enforced, mixed DOCSIS 3.0/3.1 |
-| **Arris SB6141** | ✅ Fully supported | DOCSIS 3.0 standalone |
-| **Arris SB6190** | ✅ Fully supported | DOCSIS 3.0 standalone |
-| **Arris SURFboard** (S33, S34, SB8200) | ✅ Fully supported | HNAP1 API |
-| **Arris Touchstone CM8200A** | ✅ Fully supported | ISP-branded DOCSIS 3.1 |
-| **AVM Fritz!Box Cable** (6490, 6590, 6591, 6660, 6690) | ✅ Fully supported | |
-| **Hitron CODA-56** | ✅ Fully supported | DOCSIS 3.1 |
-| **Netgear CM3000** | ✅ Fully supported | DOCSIS 3.1 standalone, JS parsing, `Login.htm` fallback |
-| **Sagemcom F@st 3896** | ✅ Fully supported | JSON-RPC API |
-| **Unitymedia Connect Box** (CH7465) | ✅ Fully supported | |
-| **Vodafone Station** (CGA4233, TG3442DE) | ✅ Fully supported | Bridge mode compatible |
-| **Technicolor TC4400** | ✅ Fully supported | |
-| **Vodafone Ultra Hub 7** (Sercomm) | ✅ Fully supported | |
-| **Generic Router** (fiber, DSL, satellite) | ✅ Fully supported | No DOCSIS data — speedtest, journal, BNetzA, and modules work |
-| **Other DOCSIS modems** | [Community driver modules](https://github.com/itsDNNS/docsight-modules) or [add your own](https://github.com/itsDNNS/docsight/wiki/Adding-Modem-Support) | |
+| **Arris CM3500B** | ✅ Supported | HTTPS enforced, mixed DOCSIS 3.0/3.1 |
+| **Arris SB6141** | ✅ Supported | DOCSIS 3.0 standalone |
+| **Arris SB6190** | ✅ Supported | DOCSIS 3.0 standalone |
+| **Arris SURFboard** (S33, S34, SB8200) | ✅ Supported | HNAP1 API |
+| **Arris Touchstone CM8200A** | ✅ Supported | ISP-branded DOCSIS 3.1 |
+| **AVM Fritz!Box Cable** (6490, 6590, 6591, 6660, 6690) | ✅ Supported | |
+| **Hitron CODA-56** | ✅ Supported | DOCSIS 3.1 |
+| **Netgear CM3000** | ✅ Supported | DOCSIS 3.1 standalone |
+| **Sagemcom F@st 3896** | ✅ Supported | JSON-RPC API |
+| **Unitymedia Connect Box** (CH7465) | ✅ Supported | |
+| **Vodafone Station** (CGA4233, TG3442DE) | ✅ Supported | Bridge mode compatible |
+| **Technicolor TC4400** | ✅ Supported | |
+| **Vodafone Ultra Hub 7** (Sercomm) | ✅ Supported | |
+| **Generic Router** (fiber, DSL, satellite) | ✅ Supported | No DOCSIS data - speedtest, journal, BNetzA, and modules work |
+| **Other DOCSIS modems** | [Community drivers](https://github.com/itsDNNS/docsight-modules) or [add your own](https://github.com/itsDNNS/docsight/wiki/Adding-Modem-Support) | |
 
-Works with any DOCSIS cable provider: Vodafone, Pyur/Tele Columbus, eazy, Magenta (AT), UPC (CH), Virgin Media (UK), and others. Non-cable users can select Generic Router during setup.
+Works with any DOCSIS cable provider worldwide. Non-cable users can select Generic Router during setup.
 
-> **Currently focused on the German cable market** (BNetzA measurements, VFKD thresholds, complaint templates). The core monitoring works with any DOCSIS modem worldwide — community contributions for other markets are welcome!
+> **Currently focused on the German cable market** (BNetzA measurements, VFKD thresholds, complaint templates). The core monitoring works with any DOCSIS modem - community contributions for other markets are welcome!
 
 ---
 
@@ -228,21 +245,13 @@ DOCSight uses a **modular collector-based architecture** for reliable data gathe
                 └────────────────────────────────────┘
 ```
 
-### Key Design Principles
-
-- **Modular collectors**: Each data source (modem, speedtest, BQM) is an independent collector with standardized interface
-- **Built-in fail-safe**: Exponential backoff prevents hammering failing endpoints, with automatic recovery
-- **Config-driven**: Collectors enable/disable based on configuration without code changes
-- **Separation of concerns**: Data collection, analysis, storage, and presentation are cleanly separated
-- **Extensible**: New data sources can be added by implementing the `Collector` base class
-
 See [`ARCHITECTURE.md`](ARCHITECTURE.md) for detailed technical documentation.
 
 ---
 
 ## Requirements
 
-- Docker (or any OCI-compatible container runtime) — or see [Running without Docker](https://github.com/itsDNNS/docsight/wiki/Running-without-Docker) for a native Python setup
+- Docker (or any OCI-compatible container runtime) - or see [Running without Docker](https://github.com/itsDNNS/docsight/wiki/Running-without-Docker) for a native Python setup
 - A supported DOCSIS cable modem/router (see above), or any router via Generic Router mode
 - MQTT broker (optional, for Home Assistant)
 
@@ -252,58 +261,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). **Please open an issue before working on
 
 ## Roadmap
 
-**Released: [v2.0 — Complete Platform Redesign](https://github.com/itsDNNS/docsight/milestone/1)**
-
-| Feature | Status | Issue |
-|---|---|---|
-| Unified Collector Architecture | ✅ Released | [#23](https://github.com/itsDNNS/docsight/issues/23) |
-| Modern UI Redesign | ✅ Released | — |
-| Cross-Source Correlation | ✅ Released | — |
-| FritzBox Event Log Integration | 🚫 Closed | [#17](https://github.com/itsDNNS/docsight/issues/17) |
-| OFDMA Channel Analysis | 🚫 Closed | [#18](https://github.com/itsDNNS/docsight/issues/18) |
-| Gaming Quality Index | ✅ Released | [#20](https://github.com/itsDNNS/docsight/issues/20) |
-| Modulation Watchdog & Power Drift | ✅ Released | [#21](https://github.com/itsDNNS/docsight/issues/21) |
-| Demo/Test Mode | ✅ Released | [#30](https://github.com/itsDNNS/docsight/issues/30) |
-| Smokeping Integration | ✅ Released | [#22](https://github.com/itsDNNS/docsight/issues/22) |
-| Incident Import, Icons & Search | ✅ Released | [#58](https://github.com/itsDNNS/docsight/issues/58) |
-| Incident Groups | ✅ Released | [#66](https://github.com/itsDNNS/docsight/issues/66) |
-| BNetzA Automated Measurements | ✅ Released | [#63](https://github.com/itsDNNS/docsight/issues/63) |
-| Vodafone Station Support | ✅ Released | [#14](https://github.com/itsDNNS/docsight/issues/14) |
-| Technicolor TC4400 Support | ✅ Released | [#24](https://github.com/itsDNNS/docsight/issues/24) |
-| Vodafone Ultra Hub 7 Support | ✅ Released | [#29](https://github.com/itsDNNS/docsight/issues/29) |
-| Arris CM3500B Support | ✅ Released | [#77](https://github.com/itsDNNS/docsight/issues/77) |
-| Unitymedia Connect Box (CH7465) | ✅ Released | |
-| Speedtest Server Tracking | ✅ Released | [#79](https://github.com/itsDNNS/docsight/issues/79) |
-| Multi-Channel Comparison | ✅ Released | [#80](https://github.com/itsDNNS/docsight/issues/80) |
-| Upstream Bandwidth Display | ✅ Released | [#81](https://github.com/itsDNNS/docsight/issues/81) |
-| Notification System | ✅ Released | [#19](https://github.com/itsDNNS/docsight/issues/19) |
-| BQM Calendar View | ✅ Released | [#65](https://github.com/itsDNNS/docsight/issues/65) |
-| BQM Bulk Import | ✅ Released | [#67](https://github.com/itsDNNS/docsight/issues/67) |
-| Backup & Restore | ✅ Released | [#64](https://github.com/itsDNNS/docsight/issues/64) |
-| CM3500 Provisioned Speeds | ✅ Released | [#84](https://github.com/itsDNNS/docsight/issues/84) |
-| Module System | ✅ Released | [#128](https://github.com/itsDNNS/docsight/issues/128) |
-| Community Module Registry | ✅ Released | [#127](https://github.com/itsDNNS/docsight/issues/127) |
-| Regional Threshold Profiles | ✅ Released | [#130](https://github.com/itsDNNS/docsight/issues/130) |
-| Settings Redesign (Tribu Design) | ✅ Released | [#104](https://github.com/itsDNNS/docsight/issues/104) |
-| Theme Engine (Themes as Modules) | ✅ Released | — |
-| Dashboard Redesign (Mobile-First PWA) | ✅ Released | [#105](https://github.com/itsDNNS/docsight/issues/105) |
-| Self-Hosted Dependencies (Offline) | ✅ Released | — |
-| Community Modem Drivers | ✅ Released | [#131](https://github.com/itsDNNS/docsight/issues/131) |
-| Non-DOCSIS Router Support | ✅ Released | [#129](https://github.com/itsDNNS/docsight/issues/129) |
-| Modulation Performance | ✅ Released | [#92](https://github.com/itsDNNS/docsight/issues/92) |
-| In-App Glossary | ✅ Released | [#158](https://github.com/itsDNNS/docsight/issues/158) |
-| Health Hysteresis | ✅ Released | [#169](https://github.com/itsDNNS/docsight/issues/169) |
-| Compact Dashboard | ✅ Released | — |
-| Diagnostic Notes in PDF | ✅ Released | — |
-| Security Hardening | ✅ Released | [#160](https://github.com/itsDNNS/docsight/issues/160) |
-| Sagemcom F@st 3896 Support | ✅ Released | [#163](https://github.com/itsDNNS/docsight/issues/163) |
-| Hitron CODA-56 Support | ✅ Released | [#172](https://github.com/itsDNNS/docsight/issues/172) |
-| Arris SB6141 Support | ✅ Released | [#174](https://github.com/itsDNNS/docsight/issues/174) |
-| Cable Segment Utilization | ✅ Released | [#188](https://github.com/itsDNNS/docsight/issues/188) |
-| Arris SB6190 Support | ✅ Released | [#192](https://github.com/itsDNNS/docsight/issues/192) |
-
-| Before/After Comparison | Released | [#50](https://github.com/itsDNNS/docsight/issues/50) |
-
 See the **[full roadmap](https://github.com/itsDNNS/docsight/wiki/Roadmap)** in the wiki for long-term goals and modem support plans.
 
 ## Changelog
@@ -312,14 +269,12 @@ See [GitHub Releases](https://github.com/itsDNNS/docsight/releases).
 
 ## Support
 
-If DOCSight helps you, you can support development here:
+If DOCSight helps you, consider supporting development:
 
-- Ko-fi: https://ko-fi.com/itsdnns ☕
-- PayPal: https://paypal.me/itsDNNS 💙
+<a href="https://ko-fi.com/itsdnns"><img src="https://img.shields.io/badge/Ko--fi-Support%20DOCSight-ff5e5b?logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
+<a href="https://paypal.me/itsDNNS"><img src="https://img.shields.io/badge/Donate-PayPal-00457C?logo=paypal&logoColor=white" alt="PayPal"></a>
 
 ## Documentation
-
-Documentation current as of **v2026-03-10.1**.
 
 | Document | Scope |
 |---|---|
@@ -330,3 +285,7 @@ Documentation current as of **v2026-03-10.1**.
 ## License
 
 [MIT](LICENSE)
+
+<p align="center">
+  <sub><strong>DOCSight</strong> = <strong>DOCS</strong>IS + In<strong>sight</strong> (+ a quiet <em>sigh</em> from every cable internet user)</sub>
+</p>
