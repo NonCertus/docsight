@@ -97,3 +97,146 @@ class TestCollectorOnImport:
         collector.collect()
 
         callback.assert_not_called()
+
+
+# ── STT Adapter Tests ──
+
+def _make_config(**overrides):
+    defaults = {
+        "speedtest_tracker_url": "http://stt:8999",
+        "speedtest_tracker_token": "test-token",
+    }
+    defaults.update(overrides)
+    config = MagicMock()
+    config.get = lambda key, default=None: defaults.get(key, default)
+    return config
+
+
+class TestSpeedtestAdapterExecute:
+    def test_successful_trigger_sets_fired(self, storage):
+        config = _make_config()
+        eid = storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.PENDING,
+        )
+        with patch("app.smart_capture.adapters.speedtest.requests.Session") as MockSession:
+            mock_session = MagicMock()
+            mock_session.post.return_value = MagicMock(status_code=201)
+            MockSession.return_value = mock_session
+            from app.smart_capture.adapters.speedtest import SpeedtestAdapter
+            adapter = SpeedtestAdapter(storage, config)
+            success, error = adapter.execute(eid, {"event_type": "modulation_change"})
+        assert success is True
+        assert error is None
+        row = storage.get_execution(eid)
+        assert row["status"] == "fired"
+        assert row["fired_at"] is not None
+
+    def test_failed_trigger_sets_expired(self, storage):
+        config = _make_config()
+        eid = storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.PENDING,
+        )
+        with patch("app.smart_capture.adapters.speedtest.requests.Session") as MockSession:
+            mock_session = MagicMock()
+            mock_session.post.return_value = MagicMock(status_code=500, text="Internal Server Error")
+            MockSession.return_value = mock_session
+            from app.smart_capture.adapters.speedtest import SpeedtestAdapter
+            adapter = SpeedtestAdapter(storage, config)
+            success, error = adapter.execute(eid, {"event_type": "modulation_change"})
+        assert success is False
+        assert "500" in error
+        row = storage.get_execution(eid)
+        assert row["status"] == "expired"
+        assert row["attempt_count"] == 1
+
+    def test_connection_error_sets_expired(self, storage):
+        config = _make_config()
+        eid = storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.PENDING,
+        )
+        with patch("app.smart_capture.adapters.speedtest.requests.Session") as MockSession:
+            mock_session = MagicMock()
+            mock_session.post.side_effect = ConnectionError("Connection refused")
+            MockSession.return_value = mock_session
+            from app.smart_capture.adapters.speedtest import SpeedtestAdapter
+            adapter = SpeedtestAdapter(storage, config)
+            success, error = adapter.execute(eid, {"event_type": "modulation_change"})
+        assert success is False
+        row = storage.get_execution(eid)
+        assert row["status"] == "expired"
+
+
+class TestSpeedtestAdapterMatching:
+    def _make_adapter(self, storage):
+        config = _make_config()
+        with patch("app.smart_capture.adapters.speedtest.requests.Session"):
+            from app.smart_capture.adapters.speedtest import SpeedtestAdapter
+            return SpeedtestAdapter(storage, config)
+
+    def test_matches_result_in_time_window(self, storage):
+        adapter = self._make_adapter(storage)
+        eid = storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.FIRED, fired_at="2026-03-15T10:00:05Z",
+        )
+        adapter.on_results_imported([{"id": 42, "timestamp": "2026-03-15T10:00:42Z"}])
+        row = storage.get_execution(eid)
+        assert row["status"] == "completed"
+        assert row["linked_result_id"] == 42
+
+    def test_ignores_result_outside_window(self, storage):
+        adapter = self._make_adapter(storage)
+        eid = storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.FIRED, fired_at="2026-03-15T10:00:05Z",
+        )
+        adapter.on_results_imported([{"id": 99, "timestamp": "2026-03-15T10:12:00Z"}])
+        assert storage.get_execution(eid)["status"] == "fired"
+
+    def test_ignores_result_before_fired_at(self, storage):
+        adapter = self._make_adapter(storage)
+        storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.FIRED, fired_at="2026-03-15T10:00:05Z",
+        )
+        adapter.on_results_imported([{"id": 99, "timestamp": "2026-03-15T09:55:00Z"}])
+        assert len(storage.get_fired_unmatched("capture")) == 1
+
+    def test_fifo_matching_oldest_first(self, storage):
+        adapter = self._make_adapter(storage)
+        eid1 = storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.FIRED, fired_at="2026-03-15T10:00:00Z",
+        )
+        eid2 = storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.FIRED, fired_at="2026-03-15T10:00:10Z",
+        )
+        adapter.on_results_imported([{"id": 42, "timestamp": "2026-03-15T10:00:42Z"}])
+        assert storage.get_execution(eid1)["status"] == "completed"
+        assert storage.get_execution(eid1)["linked_result_id"] == 42
+        assert storage.get_execution(eid2)["status"] == "fired"
+
+    def test_nearest_result_selected(self, storage):
+        adapter = self._make_adapter(storage)
+        eid = storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.FIRED, fired_at="2026-03-15T10:00:00Z",
+        )
+        adapter.on_results_imported([
+            {"id": 99, "timestamp": "2026-03-15T10:04:00Z"},
+            {"id": 42, "timestamp": "2026-03-15T10:00:30Z"},
+        ])
+        assert storage.get_execution(eid)["linked_result_id"] == 42
+
+    def test_skips_invalid_timestamp(self, storage):
+        adapter = self._make_adapter(storage)
+        storage.save_execution(
+            trigger_type="modulation_change", action_type="capture",
+            status=ExecutionStatus.FIRED, fired_at="2026-03-15T10:00:05Z",
+        )
+        adapter.on_results_imported([{"id": 42, "timestamp": ""}])
+        assert len(storage.get_fired_unmatched("capture")) == 1
