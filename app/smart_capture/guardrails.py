@@ -25,7 +25,7 @@ class GuardrailChain:
     def __init__(self, config_mgr):
         self._config = config_mgr
         self._lock = threading.Lock()
-        self._last_global_fire: float = 0.0
+        self._last_global_fire: float = float("-inf")
         self._last_trigger_fire: dict[str, float] = {}
         self._hourly_fires: list[float] = []
         self._trigger_match_history: dict[str, list[float]] = {}
@@ -86,7 +86,7 @@ class GuardrailChain:
 
                 # 4. Per-trigger cooldown
                 trigger_cd = int(self._config.get("sc_trigger_cooldown", 900))
-                last_fire = self._last_trigger_fire.get(trigger_key, 0.0)
+                last_fire = self._last_trigger_fire.get(trigger_key, float("-inf"))
                 if trigger_cd > 0 and (now - last_fire) < trigger_cd:
                     remaining = int(trigger_cd - (now - last_fire))
                     results.append((trigger, event, False,
