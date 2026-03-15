@@ -1,6 +1,7 @@
 """E2E tests for the settings page."""
 
 import pytest
+from playwright.sync_api import expect
 
 
 class TestSettingsLoad:
@@ -57,6 +58,64 @@ class TestSettingsFormElements:
     def test_back_to_dashboard_link(self, settings_page):
         link = settings_page.locator('a[href="/"]')
         assert link.count() > 0
+
+
+class TestSpeedtestModule:
+    """Speedtest module settings interactions."""
+
+    def test_speedtest_section_shows_test_button(self, settings_page):
+        settings_page.locator('button[data-section="mod-docsight_speedtest"]').click()
+
+        button = settings_page.get_by_role("button", name="Test Connection")
+        assert button.is_visible()
+
+    def test_speedtest_test_connection_success(self, settings_page):
+        settings_page.route(
+            "**/api/test-speedtest",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body="""
+                {
+                  "success": true,
+                  "results": 1,
+                  "latest": {
+                    "download": "120.50 Mbps",
+                    "upload": "24.10 Mbps",
+                    "ping": "11.4 ms"
+                  }
+                }
+                """,
+            ),
+        )
+
+        settings_page.locator('button[data-section="mod-docsight_speedtest"]').click()
+        settings_page.get_by_role("button", name="Test Connection").click()
+
+        result = settings_page.locator("#speedtest-test")
+        expect(result).to_be_visible()
+        expect(result).to_contain_text("Connected")
+        expect(result).to_contain_text("120.50 Mbps")
+        expect(result).to_contain_text("24.10 Mbps")
+        expect(result).to_contain_text("11.4 ms")
+
+    def test_speedtest_test_connection_error(self, settings_page):
+        settings_page.route(
+            "**/api/test-speedtest",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body='{"success": false, "error": "HTTP 401"}',
+            ),
+        )
+
+        settings_page.locator('button[data-section="mod-docsight_speedtest"]').click()
+        settings_page.get_by_role("button", name="Test Connection").click()
+
+        result = settings_page.locator("#speedtest-test")
+        expect(result).to_be_visible()
+        expect(result).to_contain_text("Error")
+        expect(result).to_contain_text("HTTP 401")
 
 
 class TestBackupModule:
