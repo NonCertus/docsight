@@ -1520,3 +1520,26 @@ html, body {
 .sc-sub-settings.visible {
   display: block;
 }
+
+/* Community module registry */
+.module-registry-card {
+  padding: 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.module-registry-card:last-child {
+  margin-bottom: 0;
+}
+.badge-verified {
+  background: var(--good);
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  vertical-align: middle;
+}
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 0.8em;
+}
