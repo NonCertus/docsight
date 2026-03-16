@@ -57,4 +57,29 @@
         </div>
         {% endfor %}
     </div>
+
+    {# ── Community Modules ── #}
+    <div class="settings-card glass">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-icon green">
+                    <i data-lucide="download"></i>
+                </div>
+                <div>
+                    <div class="card-title">{{ t.get('extensions_community', 'Community Modules') }}</div>
+                    <div class="card-subtitle">{{ t.get('extensions_community_desc', 'Browse and install modules from the community registry') }}</div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="refreshModuleRegistry()" id="module-registry-refresh">
+                <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i>
+                {{ t.get('extensions_browse', 'Browse') }}
+            </button>
+        </div>
+        <div id="module-registry-container" style="padding: 0 var(--card-padding) var(--card-padding);">
+            <div id="module-registry-empty" style="color:var(--muted);text-align:center;padding:24px;">
+                {{ t.get('extensions_browse_hint', 'Click Browse to load available community modules.') }}
+            </div>
+            <div id="module-registry-gallery" style="display:none;"></div>
+        </div>
+    </div>
 </div>
