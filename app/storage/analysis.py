@@ -103,6 +103,42 @@ class AnalysisMixin:
                     "verdict_upload": m.get("verdict_upload"),
                 })
 
+        # Smart Capture executions
+        capture_active = sources is None or "capture" in sources
+        if capture_active:
+            try:
+                with sqlite3.connect(self.db_path) as conn:
+                    conn.row_factory = sqlite3.Row
+                    rows = conn.execute(
+                        "SELECT * FROM smart_capture_executions "
+                        "WHERE created_at >= ? AND created_at <= ? "
+                        "ORDER BY created_at",
+                        (start_ts, end_ts),
+                    ).fetchall()
+                for r in rows:
+                    entry = {
+                        "timestamp": r["created_at"],
+                        "source": "capture",
+                        "status": r["status"],
+                        "trigger_type": r["trigger_type"],
+                        "action_type": r["action_type"],
+                        "linked_result_id": r["linked_result_id"],
+                        "suppression_reason": r["suppression_reason"],
+                    }
+                    if r["details"]:
+                        try:
+                            entry["details"] = json.loads(r["details"])
+                        except (json.JSONDecodeError, TypeError):
+                            pass
+                    timeline.append(entry)
+            except Exception:
+                pass  # Table may not exist on older schemas
+
+            # Filter smart_capture_triggered from events to avoid double-counting
+            timeline = [e for e in timeline
+                        if not (e.get("source") == "event"
+                                and e.get("event_type") == "smart_capture_triggered")]
+
         # Segment utilization
         if sources is None or "segment" in sources:
             try:
