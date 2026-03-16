@@ -843,5 +843,19 @@
     "sc_trigger_min_qam_128": "At or below 128QAM",
     "sc_trigger_min_qam_32": "At or below 32QAM",
     "sc_trigger_min_qam_8": "At or below 8QAM",
-    "sc_trigger_min_qam_512": "At or below 512QAM"
+    "sc_trigger_min_qam_512": "At or below 512QAM",
+    "extensions_community": "Modules communautaires",
+    "extensions_community_desc": "Parcourir et installer des modules depuis le registre communautaire",
+    "extensions_browse": "Parcourir",
+    "extensions_browse_hint": "Cliquez sur Parcourir pour charger les modules communautaires disponibles.",
+    "extensions_install": "Installer",
+    "extensions_uninstall": "Desinstaller",
+    "extensions_installed": "Installe",
+    "extensions_not_installed": "Non installe",
+    "extensions_install_success": "Module installe avec succes. Redemarrage necessaire.",
+    "extensions_install_failed": "Echec de l installation du module",
+    "extensions_uninstall_success": "Module desinstalle. Redemarrage necessaire.",
+    "extensions_verified": "Verifie",
+    "extensions_no_modules": "Aucun module communautaire disponible.",
+    "extensions_fetch_failed": "Impossible de charger le registre."
 }

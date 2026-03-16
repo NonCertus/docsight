@@ -851,5 +851,19 @@
     "sc_trigger_min_qam_128": "Ab 128QAM und darunter",
     "sc_trigger_min_qam_32": "Ab 32QAM und darunter",
     "sc_trigger_min_qam_8": "Ab 8QAM und darunter",
-    "sc_trigger_min_qam_512": "Ab 512QAM und darunter"
+    "sc_trigger_min_qam_512": "Ab 512QAM und darunter",
+    "extensions_community": "Community-Module",
+    "extensions_community_desc": "Module aus der Community-Registry durchsuchen und installieren",
+    "extensions_browse": "Durchsuchen",
+    "extensions_browse_hint": "Klicke Durchsuchen um verfügbare Community-Module zu laden.",
+    "extensions_install": "Installieren",
+    "extensions_uninstall": "Deinstallieren",
+    "extensions_installed": "Installiert",
+    "extensions_not_installed": "Nicht installiert",
+    "extensions_install_success": "Modul erfolgreich installiert. Neustart erforderlich.",
+    "extensions_install_failed": "Modulinstallation fehlgeschlagen",
+    "extensions_uninstall_success": "Modul deinstalliert. Neustart erforderlich.",
+    "extensions_verified": "Verifiziert",
+    "extensions_no_modules": "Keine Community-Module verfügbar.",
+    "extensions_fetch_failed": "Registry konnte nicht geladen werden."
 }
