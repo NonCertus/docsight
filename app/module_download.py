@@ -95,6 +95,7 @@ def download_github_directory(download_url: str, target_dir: str, timeout: int =
                     continue
                 subdir_path = os.path.join(target_dir, name)
                 if not download_github_directory(subdir_url, subdir_path, timeout):
+                    shutil.rmtree(target_dir, ignore_errors=True)
                     return False
 
         return True
