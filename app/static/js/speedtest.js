@@ -157,9 +157,13 @@ function renderSpeedtestRows() {
         var pingClass = pingVal > 50 ? ' class="val-warn"' : '';
         var jitterClass = jitterVal > 20 ? ' class="val-warn"' : '';
         var tr = document.createElement('tr');
+        if (r.smart_capture) tr.className = 'st-row-sc';
         var serverCell = r.server_id
             ? '<td title="' + escapeHtml(r.server_name || '') + '">#' + r.server_id + '</td>'
             : '<td></td>';
+        var scBadge = r.smart_capture
+            ? '<td class="st-sc-col"><span class="sc-badge">' + escapeHtml(T.sc_badge_label || 'Smart Capture') + '</span></td>'
+            : '<td class="st-sc-col"></td>';
         tr.innerHTML = '<td class="st-expand-col"><button class="st-expand-btn" data-id="' + r.id + '" onclick="toggleSpeedtestSignal(this)"><i data-lucide="chevron-right"></i></button></td>'
             + '<td>' + escapeHtml(formatSpeedtestTimestamp(r.timestamp)) + '</td>'
             + serverCell
@@ -167,7 +171,8 @@ function renderSpeedtestRows() {
             + '<td><strong' + ulClass + '>' + escapeHtml(r.upload_human || (r.upload_mbps + ' Mbps')) + '</strong></td>'
             + '<td' + pingClass + '>' + escapeHtml(String(r.ping_ms)) + ' ms</td>'
             + '<td' + jitterClass + '>' + escapeHtml(String(r.jitter_ms)) + ' ms</td>'
-            + '<td>' + (r.packet_loss_pct > 0 ? '<span class="val-warn">' + r.packet_loss_pct + '%</span>' : '0%') + '</td>';
+            + '<td>' + (r.packet_loss_pct > 0 ? '<span class="val-warn">' + r.packet_loss_pct + '%</span>' : '0%') + '</td>'
+            + scBadge;
         tbody.appendChild(tr);
     }
     if (moreWrap && moreBtn) {

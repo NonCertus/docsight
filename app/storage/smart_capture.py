@@ -176,6 +176,19 @@ class SmartCaptureMixin:
             row = conn.execute(query, params).fetchone()
         return row[0] if row else 0
 
+    def expire_stale_pending(self, cutoff_timestamp):
+        """Bulk-expire PENDING executions with created_at before cutoff.
+        Handles orphaned executions when no adapter is registered."""
+        with sqlite3.connect(self.db_path) as conn:
+            rowcount = conn.execute(
+                "UPDATE smart_capture_executions "
+                "SET status = 'expired', "
+                "last_error = 'no action adapter configured' "
+                "WHERE status = 'pending' AND created_at < ?",
+                (cutoff_timestamp,),
+            ).rowcount
+        return rowcount
+
     def delete_old_executions(self, days):
         """Delete executions older than given days. Returns count deleted."""
         if days <= 0:

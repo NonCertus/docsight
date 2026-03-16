@@ -75,6 +75,47 @@ class TestThemeContext:
             web._module_loader = old_loader
             web._config_manager = old_config
 
+    def test_fallback_prefers_classic_over_alphabetical(self):
+        """When no active_theme is configured, Classic is chosen over alphabetically first."""
+        from app import web
+
+        amber = ModuleInfo(
+            id="docsight.theme_amber_terminal", name="Amber Terminal", description="d",
+            version="1.0.0", author="a", min_app_version="2026.2",
+            type="theme", contributes={"theme": "theme.json"}, path="/tmp",
+            theme_data={"dark": {"--bg": "#1a1200"}, "light": {"--bg": "#fff8e0"}},
+        )
+        classic = ModuleInfo(
+            id="docsight.theme_classic", name="Classic", description="d",
+            version="1.0.0", author="a", min_app_version="2026.2",
+            type="theme", contributes={"theme": "theme.json"}, path="/tmp",
+            theme_data={"dark": {"--bg": "#111"}, "light": {"--bg": "#fff"}},
+        )
+
+        class FakeLoader:
+            def get_enabled_modules(self):
+                return [amber, classic]
+            def get_theme_modules(self):
+                return [amber, classic]  # amber first (alphabetical)
+
+        class FakeConfig:
+            def get(self, key, default=""):
+                return default  # no active_theme set
+
+        old_loader = web._module_loader
+        old_config = web._config_manager
+        try:
+            web._module_loader = FakeLoader()
+            web._config_manager = FakeConfig()
+
+            with web.app.test_request_context("/"):
+                ctx = web.inject_auth()
+                assert ctx["active_theme_id"] == "docsight.theme_classic"
+                assert ctx["active_theme_data"]["dark"]["--bg"] == "#111"
+        finally:
+            web._module_loader = old_loader
+            web._config_manager = old_config
+
     def test_theme_collections_are_grouped_for_gallery(self):
         """Theme gallery collections group signature, community, and playful themes."""
         from app import web

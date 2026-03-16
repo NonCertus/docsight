@@ -10,6 +10,7 @@ def register_blueprints(app):
     from .modules_bp import modules_bp
     from .metrics_bp import metrics_bp
     from .segment_bp import segment_bp
+    from .smart_capture_bp import smart_capture_bp
 
     app.register_blueprint(config_bp)
     app.register_blueprint(polling_bp)
@@ -19,3 +20,4 @@ def register_blueprints(app):
     app.register_blueprint(modules_bp)
     app.register_blueprint(metrics_bp)
     app.register_blueprint(segment_bp)
+    app.register_blueprint(smart_capture_bp)

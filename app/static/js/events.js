@@ -9,7 +9,8 @@ var _eventTypeLabels = {
     snr_change: T.event_type_snr_change || 'SNR Change',
     channel_change: T.event_type_channel_change || 'Channel Change',
     modulation_change: T.event_type_modulation_change || 'Modulation Change',
-    error_spike: T.event_type_error_spike || 'Error Spike'
+    error_spike: T.event_type_error_spike || 'Error Spike',
+    smart_capture_triggered: T.event_type_smart_capture_triggered || 'Smart Capture'
 };
 var _sevLabels = {
     info: T.event_severity_info || 'Info',
@@ -103,6 +104,14 @@ function formatEventMessage(ev) {
 
         case 'monitoring_started':
             return escapeHtml(T.event_monitoring_started_msg || 'Monitoring started') + ' ' + _healthDot(d.health || 'unknown');
+
+        case 'smart_capture_triggered': {
+            var scHtml = '<span>' + escapeHtml(ev.message) + '</span>';
+            if (d && d.source_event) {
+                scHtml += '<span class="ev-sub">' + escapeHtml(d.source_event) + '</span>';
+            }
+            return scHtml;
+        }
 
         default:
             return escapeHtml(ev.message);

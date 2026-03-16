@@ -77,3 +77,21 @@ class TestTriggerMatches:
             event = {"event_type": "error_spike", "severity": sev,
                      "timestamp": "2026-03-15T10:00:00Z", "message": "test"}
             assert trigger.matches(event) is True
+
+
+class TestTriggerConfigKey:
+    def test_trigger_with_config_key(self):
+        trigger = Trigger(event_type="modulation_change", action_type="capture",
+                          config_key="sc_trigger_modulation")
+        assert trigger.config_key == "sc_trigger_modulation"
+
+    def test_trigger_without_config_key(self):
+        trigger = Trigger(event_type="modulation_change", action_type="capture")
+        assert trigger.config_key is None
+
+    def test_config_key_does_not_affect_matches(self):
+        trigger = Trigger(event_type="modulation_change", action_type="capture",
+                          config_key="sc_trigger_modulation")
+        event = {"event_type": "modulation_change", "severity": "warning",
+                 "timestamp": "2026-03-16T10:00:00Z", "message": "test"}
+        assert trigger.matches(event) is True

@@ -200,7 +200,7 @@ def api_correlation():
 
     sources_param = request.args.get("sources", "")
     if sources_param:
-        valid = {"modem", "speedtest", "events", "bnetz"}
+        valid = {"modem", "speedtest", "events", "bnetz", "capture"}
         sources = valid & set(s.strip() for s in sources_param.split(","))
         if not sources:
             sources = valid

@@ -23,6 +23,7 @@ class Trigger:
     """
     event_type: str
     action_type: str
+    config_key: str | None = None
     min_severity: str | None = None
     require_details: dict | None = field(default=None, hash=False)
 

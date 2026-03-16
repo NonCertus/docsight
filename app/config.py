@@ -54,6 +54,10 @@ DEFAULTS = {
     "sc_max_actions_per_hour": 4,
     "sc_flapping_window": 3600,
     "sc_flapping_threshold": 3,
+    "sc_trigger_modulation": True,
+    "sc_trigger_snr": False,
+    "sc_trigger_error_spike": False,
+    "sc_trigger_health": False,
 }
 
 ENV_MAP = {
@@ -100,6 +104,10 @@ ENV_MAP = {
     "sc_max_actions_per_hour": "SC_MAX_ACTIONS_PER_HOUR",
     "sc_flapping_window": "SC_FLAPPING_WINDOW",
     "sc_flapping_threshold": "SC_FLAPPING_THRESHOLD",
+    "sc_trigger_modulation": "SC_TRIGGER_MODULATION",
+    "sc_trigger_snr": "SC_TRIGGER_SNR",
+    "sc_trigger_error_spike": "SC_TRIGGER_ERROR_SPIKE",
+    "sc_trigger_health": "SC_TRIGGER_HEALTH",
 }
 
 # Deprecated env vars (FRITZ_* -> MODEM_*) - checked as fallback
@@ -119,7 +127,8 @@ _LEGACY_KEY_MAP = {
 INT_KEYS = {"poll_interval", "web_port", "history_days", "notify_cooldown", "health_hysteresis",
             "sc_global_cooldown", "sc_trigger_cooldown", "sc_max_actions_per_hour",
             "sc_flapping_window", "sc_flapping_threshold"}
-BOOL_KEYS = {"demo_mode", "gaming_quality_enabled", "segment_utilization_enabled", "sc_enabled"}
+BOOL_KEYS = {"demo_mode", "gaming_quality_enabled", "segment_utilization_enabled", "sc_enabled",
+             "sc_trigger_modulation", "sc_trigger_snr", "sc_trigger_error_spike", "sc_trigger_health"}
 
 URL_KEYS = {"modem_url", "bqm_url", "speedtest_tracker_url", "notify_webhook_url"}
 _ALLOWED_URL_SCHEMES = {"http", "https"}

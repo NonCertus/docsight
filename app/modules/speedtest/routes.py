@@ -62,6 +62,23 @@ def _enrich_speedtest(result):
     return result
 
 
+def _annotate_smart_capture(results, db_path):
+    """Annotate speedtest results with smart_capture flag."""
+    try:
+        import sqlite3
+        with sqlite3.connect(db_path) as conn:
+            rows = conn.execute(
+                "SELECT linked_result_id FROM smart_capture_executions "
+                "WHERE status = 'completed' AND linked_result_id IS NOT NULL"
+            ).fetchall()
+            sc_ids = {r[0] for r in rows}
+        for r in results:
+            r["smart_capture"] = r.get("id") in sc_ids
+    except Exception:
+        for r in results:
+            r["smart_capture"] = False
+
+
 def _get_lang():
     from flask import request as req
     return req.cookies.get("lang", "en")
@@ -80,7 +97,9 @@ def api_speedtest():
     # Demo mode: return seeded data without external API call
     if _config_manager.is_demo_mode() and ss:
         results = ss.get_speedtest_results(limit=count)
-        return jsonify([_enrich_speedtest(r) for r in results])
+        enriched = [_enrich_speedtest(r) for r in results]
+        _annotate_smart_capture(enriched, ss.db_path)
+        return jsonify(enriched)
     # Delta fetch: get new results from STT API and cache them
     if ss:
         try:
@@ -101,7 +120,9 @@ def api_speedtest():
         except Exception as e:
             log.warning("Speedtest delta fetch failed: %s", e)
         results = ss.get_speedtest_results(limit=count)
-        return jsonify([_enrich_speedtest(r) for r in results])
+        enriched = [_enrich_speedtest(r) for r in results]
+        _annotate_smart_capture(enriched, ss.db_path)
+        return jsonify(enriched)
     # Fallback: no storage, fetch directly
     from .client import SpeedtestClient
     client = SpeedtestClient(

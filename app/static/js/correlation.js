@@ -58,7 +58,7 @@ function loadCorrelationData() {
     var segmentUrl = '/api/fritzbox/segment-utilization/range?start=' + encodeURIComponent(wStart) + '&end=' + encodeURIComponent(wEnd);
 
     Promise.all([
-        fetch('/api/correlation?hours=' + hours + '&sources=modem,speedtest,events').then(function(r) { return r.json(); }),
+        fetch('/api/correlation?hours=' + hours + '&sources=modem,speedtest,events,capture').then(function(r) { return r.json(); }),
         fetch(weatherUrl).then(function(r) { return r.json(); }).catch(function() { return []; }),
         fetch(segmentUrl).then(function(r) { return r.json(); }).catch(function() { return []; })
     ]).then(function(results) {
@@ -1198,6 +1198,23 @@ function renderCorrelationTable(data) {
                     + (healthLabels[e.modem_health] || e.modem_health) + '</span>';
             }
             details = (T.speedtest_ping || 'Ping') + ' ' + (e.ping_ms || '') + ' ms | Jitter ' + (e.jitter_ms || '') + ' ms' + mhBadge;
+        } else if (src === 'capture') {
+            var scStatus = e.status || '';
+            var scColor = scStatus === 'completed' ? 'var(--good)'
+                : scStatus === 'suppressed' ? 'var(--muted)'
+                : scStatus === 'expired' ? 'var(--crit)'
+                : 'var(--accent)';
+            src = '<span style="color:' + scColor + ';">' + escapeHtml(T.correlation_source_capture || 'Capture') + '</span>';
+            if (scStatus === 'completed' || scStatus === 'fired') {
+                msg = escapeHtml(T.sc_action_capture || 'Speedtest triggered');
+                details = e.linked_result_id ? 'Result #' + e.linked_result_id : '';
+            } else if (scStatus === 'suppressed') {
+                msg = escapeHtml(T.sc_status_suppressed || 'Suppressed');
+                details = escapeHtml(e.suppression_reason || '');
+            } else {
+                msg = escapeHtml(scStatus);
+                details = escapeHtml(e.last_error || '');
+            }
         } else if (src === 'event') {
             var sevColor = e.severity === 'critical' ? 'var(--crit)' : e.severity === 'warning' ? 'var(--warn)' : 'var(--muted)';
             src = '<span style="color:' + sevColor + ';">' + (sevLabels[e.severity] || e.severity) + '</span>';

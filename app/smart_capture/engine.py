@@ -70,6 +70,14 @@ class SmartCaptureEngine:
         if not matches:
             return
 
+        # Filter by per-trigger config key (sc_trigger_* must be True)
+        matches = [
+            (t, ev) for t, ev in matches
+            if t.config_key is None or self._config.get(t.config_key, False)
+        ]
+        if not matches:
+            return
+
         results = self._guardrails.check_batch(matches)
 
         for trigger, ev, allowed, reason in results:

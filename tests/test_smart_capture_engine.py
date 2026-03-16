@@ -332,3 +332,49 @@ class TestAdapterDispatch:
         mock_adapter = MagicMock()
         engine.register_adapter("capture", mock_adapter)
         assert engine.adapter_action_types == ["capture"]
+
+
+class TestConfigDrivenTriggerGating:
+    def test_disabled_trigger_skipped(self, storage):
+        config = _make_config(sc_trigger_modulation=False)
+        engine = SmartCaptureEngine(storage, config)
+        engine.register_trigger(Trigger(event_type="modulation_change",
+                                        action_type="capture",
+                                        config_key="sc_trigger_modulation"))
+        event = {"event_type": "modulation_change", "severity": "warning",
+                 "timestamp": "2026-03-16T10:00:00Z", "message": "drop"}
+        engine.evaluate([event])
+        assert storage.get_executions() == []
+
+    def test_enabled_trigger_fires(self, storage):
+        config = _make_config(sc_trigger_modulation=True)
+        engine = SmartCaptureEngine(storage, config)
+        engine.register_trigger(Trigger(event_type="modulation_change",
+                                        action_type="capture",
+                                        config_key="sc_trigger_modulation"))
+        event = {"event_type": "modulation_change", "severity": "warning",
+                 "timestamp": "2026-03-16T10:00:00Z", "message": "drop"}
+        engine.evaluate([event])
+        assert len(storage.get_executions()) == 1
+
+    def test_trigger_without_config_key_always_fires(self, storage):
+        config = _make_config()
+        engine = SmartCaptureEngine(storage, config)
+        engine.register_trigger(Trigger(event_type="modulation_change",
+                                        action_type="capture"))
+        event = {"event_type": "modulation_change", "severity": "warning",
+                 "timestamp": "2026-03-16T10:00:00Z", "message": "drop"}
+        engine.evaluate([event])
+        assert len(storage.get_executions()) == 1
+
+    def test_master_switch_overrides_trigger_config(self, storage):
+        """sc_enabled=False should block even if trigger config_key is True."""
+        config = _make_config(sc_enabled=False, sc_trigger_modulation=True)
+        engine = SmartCaptureEngine(storage, config)
+        engine.register_trigger(Trigger(event_type="modulation_change",
+                                        action_type="capture",
+                                        config_key="sc_trigger_modulation"))
+        event = {"event_type": "modulation_change", "severity": "warning",
+                 "timestamp": "2026-03-16T10:00:00Z", "message": "drop"}
+        engine.evaluate([event])
+        assert storage.get_executions() == []
