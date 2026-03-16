@@ -1,0 +1,67 @@
+<h2>Smart Capture Settings — Platzierung</h2>
+<p class="subtitle">Wo soll der Smart Capture Settings-Bereich im Settings-Layout erscheinen?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Eigener Bereich unter "Connection"</h3>
+      <p>Wie Notifications — ein eigener Nav-Punkt in der Settings-Sidebar, gleiche Ebene wie Connection, Notifications, Appearance. Erscheint nur wenn Speedtest Tracker konfiguriert ist.</p>
+      <div style="background:#1a1a2e;border-radius:6px;padding:10px;margin-top:8px;font-family:monospace;font-size:11px;color:#e0e0e0;">
+        <div style="border-left:2px solid #333;padding-left:8px;">
+          <div style="padding:3px 0;">🔌 Connection</div>
+          <div style="padding:3px 0;">⚙ General</div>
+          <div style="padding:3px 0;">🔔 Notifications</div>
+          <div style="padding:3px 0;color:#7aa2f7;border-left:2px solid #7aa2f7;margin-left:-10px;padding-left:8px;">⚡ Smart Capture</div>
+          <div style="padding:3px 0;">🎨 Appearance</div>
+          <div style="padding:3px 0;">🔒 Security</div>
+          <div style="color:#888;padding:3px 0;font-size:10px;">MODULES</div>
+          <div style="padding:3px 0;">📊 Speedtest</div>
+          <div style="padding:3px 0;">💾 Backup</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Innerhalb der Speedtest-Modul-Settings</h3>
+      <p>Als Untersektion im bestehenden Speedtest-Settings-Panel. Logisch zusammen mit der STT-Konfiguration, da Smart Capture v1 nur STT als Action hat.</p>
+      <div style="background:#1a1a2e;border-radius:6px;padding:10px;margin-top:8px;font-family:monospace;font-size:11px;color:#e0e0e0;">
+        <div style="border-left:2px solid #333;padding-left:8px;">
+          <div style="color:#888;padding:3px 0;font-size:10px;">MODULES</div>
+          <div style="padding:3px 0;color:#7aa2f7;border-left:2px solid #7aa2f7;margin-left:-10px;padding-left:8px;">📊 Speedtest</div>
+        </div>
+        <div style="margin-top:8px;padding:8px;border:1px solid #333;border-radius:4px;">
+          <div style="margin-bottom:6px;">Speedtest Tracker URL: <span style="color:#7aa2f7">http://stt:8999</span></div>
+          <div style="margin-bottom:10px;">Token: <span style="color:#888">••••••••</span></div>
+          <div style="border-top:1px solid #444;padding-top:8px;margin-top:4px;">
+            <div style="color:#f0c040;font-weight:bold;margin-bottom:6px;">⚡ Smart Capture</div>
+            <div>Enable: <span style="display:inline-block;width:28px;height:14px;background:#4CAF50;border-radius:7px;"></span></div>
+            <div>Cooldown: 300s | Max/h: 4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top:20px;">
+  <div class="pros">
+    <h4>A: Eigener Bereich</h4>
+    <ul>
+      <li>Smart Capture als eigenständiges Feature sichtbar</li>
+      <li>Platz für Execution History</li>
+      <li>Skaliert wenn später Webhook/Journal Actions dazukommen</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>B: In Speedtest-Settings</h4>
+    <ul>
+      <li>Kein neuer Nav-Punkt nötig</li>
+      <li>Logisch nah an STT-Config</li>
+      <li>Wird eng wenn History/Audit dazukommt</li>
+    </ul>
+  </div>
+</div>
