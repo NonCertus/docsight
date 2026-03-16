@@ -1,0 +1,12 @@
+{
+  "id": "docsight.thresholds_vfkd_community",
+  "name": "VFKD Thresholds (Community)",
+  "description": "Community-derived signal thresholds for Vodafone Kabel Deutschland, based on vodafonekabelforum.de guidelines. More lenient than the official spec.",
+  "version": "1.0.0",
+  "author": "itsDNNS",
+  "minAppVersion": "2026.2",
+  "type": "driver",
+  "contributes": {
+    "thresholds": "thresholds.json"
+  }
+}

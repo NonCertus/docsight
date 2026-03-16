@@ -1,7 +1,7 @@
 {
   "id": "docsight.thresholds_vfkd",
   "name": "VFKD Thresholds",
-  "description": "Signal thresholds based on Vodafone Kabel Deutschland (VFKD) community guidelines",
+  "description": "Signal thresholds based on the official Vodafone pNTP Interface Specification v1.06",
   "version": "1.0.0",
   "author": "itsDNNS",
   "minAppVersion": "2026.2",

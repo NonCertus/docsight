@@ -144,9 +144,9 @@ class TestHealthTolerated:
 
 class TestHealthMarginal:
     def test_ds_power_marginal(self):
-        """DS power 19 dBmV is marginal (between warn_max 18 and crit_max 20)."""
+        """DS power 15.5 dBmV is marginal (between warn_max 15 and crit_max 16)."""
         data = _make_data(
-            ds30=[_make_ds30(1, power=19.0, mse="-35")],
+            ds30=[_make_ds30(1, power=15.5, mse="-35")],
             us30=[_make_us30(1, power=44.0)],
         )
         result = analyze(data)
@@ -753,7 +753,7 @@ class TestSetThresholds:
     def test_fallback_when_empty(self):
         analyzer._thresholds = {}
         t = analyzer._get_ds_power_thresholds("256QAM")
-        assert t["good_min"] == -3.9  # fallback value
+        assert t["good_min"] == -4.0  # fallback value (Vodafone pNTP spec v1.06)
 
 
 class TestOFDMAUpstream:
