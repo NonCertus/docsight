@@ -44,7 +44,7 @@ DEFAULTS = {
     "notify_cooldown": 3600,
     "notify_cooldowns": "{}",
     "timezone": "",
-    "disabled_modules": "docsight.smokeping",  # comma-separated list of module IDs to disable
+    "disabled_modules": "docsight.smokeping,docsight.thresholds_vfkd_community",  # comma-separated list of module IDs to disable
     "active_theme": "",  # Module ID of active theme (empty = first available)
     "theme_registry_url": "https://raw.githubusercontent.com/itsDNNS/docsight-themes/main/registry.json",
     "health_hysteresis": 0,
