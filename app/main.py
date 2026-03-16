@@ -159,6 +159,12 @@ def polling_loop(config_mgr, storage, stop_event):
             stt_collector.on_import = stt_adapter.on_results_imported
             log.info("Smart Capture: STT adapter wired to speedtest collector")
 
+    # Wire Smart Capture to Connection Monitor collector
+    cm_collector = next((c for c in collectors if c.name == "connection_monitor"), None)
+    if cm_collector and hasattr(cm_collector, 'set_smart_capture'):
+        cm_collector.set_smart_capture(smart_capture)
+        log.info("Smart Capture: wired to Connection Monitor collector")
+
     # Inject collectors into web layer for manual polling and status endpoint
     modem_collector = next((c for c in collectors if c.name in ("modem", "demo")), None)
     if modem_collector:
