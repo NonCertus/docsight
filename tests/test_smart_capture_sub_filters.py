@@ -145,3 +145,61 @@ class TestPacketLossSubFilter:
         event = {"event_type": "cm_packet_loss_warning",
                  "details": {"packet_loss_pct": 5.0, "target_id": 1}}
         assert packet_loss_sub_filter(config, event) is True
+
+
+# ── Config key coverage ──
+
+class TestConfigKeysExist:
+    """Verify sub-settings config keys are properly registered."""
+
+    def test_sub_settings_in_defaults(self):
+        from app.config import DEFAULTS
+        assert "sc_trigger_modulation_direction" in DEFAULTS
+        assert "sc_trigger_modulation_min_qam" in DEFAULTS
+        assert "sc_trigger_error_spike_min_delta" in DEFAULTS
+        assert "sc_trigger_health_level" in DEFAULTS
+        assert "sc_trigger_packet_loss" in DEFAULTS
+        assert "sc_trigger_packet_loss_min_pct" in DEFAULTS
+
+    def test_sub_settings_default_values(self):
+        from app.config import DEFAULTS
+        assert DEFAULTS["sc_trigger_modulation_direction"] == "both"
+        assert DEFAULTS["sc_trigger_modulation_min_qam"] == ""
+        assert DEFAULTS["sc_trigger_error_spike_min_delta"] == 0
+        assert DEFAULTS["sc_trigger_health_level"] == "any_degradation"
+        assert DEFAULTS["sc_trigger_packet_loss"] is False
+
+    def test_packet_loss_in_bool_keys(self):
+        from app.config import BOOL_KEYS
+        assert "sc_trigger_packet_loss" in BOOL_KEYS
+
+    def test_error_spike_delta_in_int_keys(self):
+        from app.config import INT_KEYS
+        assert "sc_trigger_error_spike_min_delta" in INT_KEYS
+
+
+# ── CM Collector Smart Capture integration ──
+
+class TestCMCollectorSmartCapture:
+    """Verify CM collector wires Smart Capture correctly."""
+
+    def test_set_smart_capture_stores_reference(self):
+        from unittest.mock import patch
+        cm_defaults = {
+            "connection_monitor_probe_method": "auto",
+            "connection_monitor_outage_threshold": "5",
+            "connection_monitor_loss_warning_pct": "2.0",
+        }
+        with patch("app.modules.connection_monitor.collector.ConnectionMonitorStorage"):
+            with patch("app.modules.connection_monitor.collector.ProbeEngine"):
+                from app.modules.connection_monitor.collector import ConnectionMonitorCollector
+                config = MagicMock()
+                config.get = MagicMock(side_effect=lambda k, d=None: cm_defaults.get(k, d))
+                storage = MagicMock()
+                storage.db_path = ":memory:"
+                web = MagicMock()
+                collector = ConnectionMonitorCollector(config_mgr=config, storage=storage, web=web)
+                assert collector._smart_capture is None
+                mock_engine = MagicMock()
+                collector.set_smart_capture(mock_engine)
+                assert collector._smart_capture is mock_engine
