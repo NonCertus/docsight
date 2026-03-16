@@ -106,19 +106,27 @@ def polling_loop(config_mgr, storage, stop_event):
         notifier = NotificationDispatcher(config_mgr)
         log.info("Notifications: webhook configured")
 
-    # Smart Capture (optional)
-    smart_capture = None
-    if config_mgr.get("sc_enabled", False):
-        from .smart_capture import SmartCaptureEngine, Trigger
-        smart_capture = SmartCaptureEngine(storage, config_mgr)
-        # Default trigger: modulation downgrades (v1 scope)
-        smart_capture.register_trigger(Trigger(
-            event_type="modulation_change",
-            action_type="capture",
-            min_severity="warning",
-            require_details={"direction": "downgrade"},
-        ))
-        log.info("Smart Capture: enabled with %d trigger(s)", len(smart_capture.triggers))
+    # Smart Capture (always instantiated — _is_enabled() gates at runtime)
+    from .smart_capture import SmartCaptureEngine, Trigger
+    smart_capture = SmartCaptureEngine(storage, config_mgr)
+    smart_capture.register_trigger(Trigger(
+        event_type="modulation_change", action_type="capture",
+        config_key="sc_trigger_modulation",
+        min_severity="warning", require_details={"direction": "downgrade"},
+    ))
+    smart_capture.register_trigger(Trigger(
+        event_type="snr_change", action_type="capture",
+        config_key="sc_trigger_snr", min_severity="warning",
+    ))
+    smart_capture.register_trigger(Trigger(
+        event_type="error_spike", action_type="capture",
+        config_key="sc_trigger_error_spike",
+    ))
+    smart_capture.register_trigger(Trigger(
+        event_type="health_change", action_type="capture",
+        config_key="sc_trigger_health", min_severity="warning",
+    ))
+    log.info("Smart Capture: registered %d trigger(s)", len(smart_capture.triggers))
 
     web.update_state(poll_interval=config["poll_interval"])
 
@@ -128,8 +136,8 @@ def polling_loop(config_mgr, storage, stop_event):
         notifier=notifier, smart_capture=smart_capture,
     )
 
-    # Wire STT adapter if Smart Capture enabled, STT configured, and not demo mode
-    if smart_capture and config_mgr.is_speedtest_configured() and not config_mgr.is_demo_mode():
+    # Wire STT adapter if STT configured and not demo mode
+    if config_mgr.is_speedtest_configured() and not config_mgr.is_demo_mode():
         from .smart_capture.adapters.speedtest import SpeedtestAdapter
         stt_adapter = SpeedtestAdapter(storage, config_mgr)
         smart_capture.register_adapter("capture", stt_adapter)
@@ -245,7 +253,7 @@ def polling_loop(config_mgr, storage, stop_event):
                         future.cancel()
 
             # ── Smart Capture expiry check (every 60s) ──
-            if smart_capture and smart_capture.adapter_action_types:
+            if smart_capture:
                 if not hasattr(polling_loop, '_sc_expiry_counter'):
                     polling_loop._sc_expiry_counter = 0
                 polling_loop._sc_expiry_counter += 1
@@ -258,6 +266,11 @@ def polling_loop(config_mgr, storage, stop_event):
                         if expired:
                             log.info("Smart Capture: expired %d stale %s executions",
                                      expired, action_type)
+                    # Expire orphaned PENDING executions (no adapter registered)
+                    pending_expired = storage.expire_stale_pending(cutoff)
+                    if pending_expired:
+                        log.info("Smart Capture: expired %d orphaned pending executions",
+                                 pending_expired)
 
             stop_event.wait(1)
     finally:
