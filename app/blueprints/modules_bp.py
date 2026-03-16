@@ -186,7 +186,8 @@ def api_themes_install():
     if not data or "download_url" not in data or "id" not in data:
         return jsonify({"success": False, "error": "Missing download_url or id"}), 400
 
-    theme_dir = os.path.join("/modules", data["id"].replace(".", "_"))
+    modules_dir = os.environ.get("MODULES_DIR", "/modules")
+    theme_dir = os.path.join(modules_dir, data["id"].replace(".", "_"))
 
     from app.theme_registry import download_theme
     if download_theme(data["download_url"], theme_dir):
