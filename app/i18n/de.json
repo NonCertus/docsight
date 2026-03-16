@@ -850,5 +850,6 @@
     "sc_trigger_min_qam_1024": "Ab 1024QAM und darunter",
     "sc_trigger_min_qam_128": "Ab 128QAM und darunter",
     "sc_trigger_min_qam_32": "Ab 32QAM und darunter",
-    "sc_trigger_min_qam_8": "Ab 8QAM und darunter"
+    "sc_trigger_min_qam_8": "Ab 8QAM und darunter",
+    "sc_trigger_min_qam_512": "Ab 512QAM und darunter"
 }

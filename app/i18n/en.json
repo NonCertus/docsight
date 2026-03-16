@@ -850,5 +850,6 @@
     "sc_trigger_min_qam_1024": "At or below 1024QAM",
     "sc_trigger_min_qam_128": "At or below 128QAM",
     "sc_trigger_min_qam_32": "At or below 32QAM",
-    "sc_trigger_min_qam_8": "At or below 8QAM"
+    "sc_trigger_min_qam_8": "At or below 8QAM",
+    "sc_trigger_min_qam_512": "At or below 512QAM"
 }
