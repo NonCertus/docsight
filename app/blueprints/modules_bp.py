@@ -194,3 +194,176 @@ def api_themes_install():
         return jsonify({"success": True, "restart_required": True})
     else:
         return jsonify({"success": False, "error": "Download failed"}), 500
+
+
+def _get_modules_dir():
+    return os.environ.get("MODULES_DIR", "/modules")
+
+
+def _scan_installed_community_ids():
+    """Scan MODULES_DIR for installed community modules by reading manifest IDs."""
+    modules_dir = _get_modules_dir()
+    installed = {}
+    if not os.path.isdir(modules_dir):
+        return installed
+    for entry in os.listdir(modules_dir):
+        manifest_path = os.path.join(modules_dir, entry, "manifest.json")
+        if os.path.isfile(manifest_path):
+            try:
+                import json
+                with open(manifest_path) as f:
+                    data = json.load(f)
+                mod_id = data.get("id", "")
+                if mod_id:
+                    installed[mod_id] = entry
+            except Exception as e:
+                log.warning("Failed to read manifest in %s: %s", entry, e)
+    return installed
+
+
+@modules_bp.route("/api/modules/registry")
+@require_auth
+def api_modules_registry():
+    """Fetch available community modules from the registry."""
+    config_mgr = get_config_manager()
+    if not config_mgr:
+        return jsonify([])
+
+    registry_url = config_mgr.get(
+        "module_registry_url",
+        "https://raw.githubusercontent.com/itsDNNS/docsight-modules/main/registry.json",
+    )
+
+    from app.module_download import fetch_registry
+    modules = fetch_registry(registry_url, key="modules")
+
+    # Determine install status via disk detection
+    installed_ids = _scan_installed_community_ids()
+    disabled_raw = config_mgr.get("disabled_modules", "")
+    disabled_set = {s.strip() for s in disabled_raw.split(",") if s.strip()}
+
+    for mod in modules:
+        mod_id = mod.get("id", "")
+        if mod_id in installed_ids:
+            mod["status"] = "installed_disabled" if mod_id in disabled_set else "installed_enabled"
+        else:
+            mod["status"] = "not_installed"
+
+    return jsonify(modules)
+
+
+@modules_bp.route("/api/modules/install", methods=["POST"])
+@require_auth
+def api_modules_install():
+    """Download and install a community module."""
+    data = request.get_json()
+    if not data or "download_url" not in data or "id" not in data:
+        return jsonify({"success": False, "error": "Missing download_url or id"}), 400
+
+    mod_id = data["id"]
+    modules_dir = _get_modules_dir()
+    target_dir = os.path.join(modules_dir, mod_id)
+
+    # Path traversal protection
+    real_modules = os.path.realpath(modules_dir)
+    real_target = os.path.realpath(target_dir)
+    if not real_target.startswith(real_modules + os.sep):
+        return jsonify({"success": False, "error": "Invalid module ID"}), 400
+
+    # Reject if directory already exists
+    if os.path.exists(target_dir):
+        return jsonify({"success": False, "error": "Module already installed"}), 409
+
+    # Reject if ID conflicts with existing modules
+    loader = get_module_loader()
+    if loader:
+        existing_ids = {m.id for m in loader.get_modules()}
+        if mod_id in existing_ids:
+            return jsonify({"success": False, "error": "Module ID conflicts with existing module"}), 409
+
+    # Also check disk for already-installed community modules
+    installed_ids = _scan_installed_community_ids()
+    if mod_id in installed_ids:
+        return jsonify({"success": False, "error": "Module already installed"}), 409
+
+    # Download
+    from app.module_download import download_github_directory
+    if not download_github_directory(data["download_url"], target_dir):
+        return jsonify({"success": False, "error": "Download failed"}), 500
+
+    # Post-download validation
+    import json as json_mod
+    manifest_path = os.path.join(target_dir, "manifest.json")
+    if not os.path.isfile(manifest_path):
+        import shutil
+        shutil.rmtree(target_dir, ignore_errors=True)
+        return jsonify({"success": False, "error": "Downloaded module missing manifest.json"}), 500
+
+    try:
+        with open(manifest_path) as f:
+            manifest = json_mod.load(f)
+        from app.module_loader import validate_manifest
+        validate_manifest(manifest, target_dir)
+        if manifest.get("id") != mod_id:
+            raise ValueError(f"Manifest ID '{manifest.get('id')}' does not match requested ID '{mod_id}'")
+    except Exception as e:
+        import shutil
+        shutil.rmtree(target_dir, ignore_errors=True)
+        return jsonify({"success": False, "error": f"Invalid module: {e}"}), 500
+
+    # Persist as disabled-by-default
+    config_mgr = get_config_manager()
+    if config_mgr:
+        disabled_raw = config_mgr.get("disabled_modules", "")
+        disabled_set = {s.strip() for s in disabled_raw.split(",") if s.strip()}
+        disabled_set.add(mod_id)
+        config_mgr.save({"disabled_modules": ",".join(sorted(disabled_set))})
+
+    log.info("Module '%s' installed to %s (disabled, restart required)", mod_id, target_dir)
+    return jsonify({"success": True, "restart_required": True})
+
+
+@modules_bp.route("/api/modules/uninstall", methods=["POST"])
+@require_auth
+def api_modules_uninstall():
+    """Uninstall a community module."""
+    data = request.get_json()
+    if not data or "id" not in data:
+        return jsonify({"success": False, "error": "Missing id"}), 400
+
+    mod_id = data["id"]
+    modules_dir = _get_modules_dir()
+
+    # Find the module directory
+    installed = _scan_installed_community_ids()
+    if mod_id not in installed:
+        return jsonify({"success": False, "error": "Module not installed"}), 404
+
+    target_dir = os.path.join(modules_dir, installed[mod_id])
+
+    # Path traversal protection
+    real_modules = os.path.realpath(modules_dir)
+    real_target = os.path.realpath(target_dir)
+    if not real_target.startswith(real_modules + os.sep):
+        return jsonify({"success": False, "error": "Invalid module path"}), 400
+
+    # Only allow uninstalling non-builtin modules
+    loader = get_module_loader()
+    if loader:
+        mod = next((m for m in loader.get_modules() if m.id == mod_id), None)
+        if mod and mod.builtin:
+            return jsonify({"success": False, "error": "Cannot uninstall built-in module"}), 403
+
+    import shutil
+    shutil.rmtree(target_dir, ignore_errors=True)
+
+    # Remove from disabled_modules if present
+    config_mgr = get_config_manager()
+    if config_mgr:
+        disabled_raw = config_mgr.get("disabled_modules", "")
+        disabled_set = {s.strip() for s in disabled_raw.split(",") if s.strip()}
+        disabled_set.discard(mod_id)
+        config_mgr.save({"disabled_modules": ",".join(sorted(disabled_set))})
+
+    log.info("Module '%s' uninstalled (restart required)", mod_id)
+    return jsonify({"success": True, "restart_required": True})
