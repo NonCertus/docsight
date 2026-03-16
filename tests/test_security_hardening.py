@@ -70,7 +70,7 @@ class TestThemeURLValidation:
         result = download_theme("http://evil.com/theme", str(tmp_path / "evil_theme"))
         assert result is False
 
-    @patch("app.theme_registry.urllib.request.urlopen")
+    @patch("app.module_download.urllib.request.urlopen")
     def test_download_skips_untrusted_file_urls(self, mock_urlopen, tmp_path):
         """File entries with untrusted download_url should be skipped."""
         # Mock the directory listing response

@@ -26,7 +26,7 @@ class TestValidateRegistryEntry:
 
 
 class TestFetchRegistry:
-    @patch("app.theme_registry.urllib.request.urlopen")
+    @patch("app.module_download.urllib.request.urlopen")
     def test_fetches_and_parses_registry(self, mock_urlopen):
         registry = {
             "version": 1,
@@ -52,7 +52,7 @@ class TestFetchRegistry:
         assert len(result) == 1
         assert result[0]["id"] == "docsight.theme_neon"
 
-    @patch("app.theme_registry.urllib.request.urlopen")
+    @patch("app.module_download.urllib.request.urlopen")
     def test_returns_empty_on_error(self, mock_urlopen):
         mock_urlopen.side_effect = Exception("Network error")
         result = fetch_registry("https://example.com/registry.json")
