@@ -1,8 +1,0 @@
-{"type":"server-started","port":63802,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:63802","screen_dir":"/home/dnns/Projects/docsight/.superpowers/brainstorm/148504-1773641113"}
-{"type":"screen-added","file":"/home/dnns/Projects/docsight/.superpowers/brainstorm/148504-1773641113/smart-capture-surfaces.html"}
-{"source":"user-event","type":"click","text":"⚙ Smart Capture Settings\n        \n          \n          Enable Smart Capture\n        \n        \n          GUARDRAILS\n          Global Cooldown: [300] sec\n          Max Actions/Hour: [4]\n        \n        \n          EXECUTION HISTORY\n          \n            ✅ modulation_change → capture completed\n            ⏳ modulation_change → capture fired\n            🚫 modulation_change → capture suppressed (cooldown)\n          \n        \n      \n    \n    \n      1. Settings Section\n      Eigener Bereich in Settings: Toggle, Guardrail-Config, Execution History. Einziger Ort für aktive Konfiguration.","choice":"settings","id":null,"timestamp":1773641206836}
-{"type":"screen-added","file":"/home/dnns/Projects/docsight/.superpowers/brainstorm/148504-1773641113/settings-layout.html"}
-{"type":"screen-added","file":"/home/dnns/Projects/docsight/.superpowers/brainstorm/148504-1773641113/trigger-config.html"}
-{"type":"screen-added","file":"/home/dnns/Projects/docsight/.superpowers/brainstorm/148504-1773641113/speedtest-badge.html"}
-{"type":"screen-added","file":"/home/dnns/Projects/docsight/.superpowers/brainstorm/148504-1773641113/waiting.html"}
-{"type":"server-stopped","reason":"idle timeout"}
