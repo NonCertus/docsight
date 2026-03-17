@@ -205,6 +205,14 @@ function renderChart(canvasId, labels, datasets, type, zones, opts) {
     // Save zoom state before potential destroy — restore after recreate
     var savedZoom = existing && existing._zoomRange ? existing._zoomRange : null;
 
+    // Fix container height before destroy to prevent scroll jump from DOM reflow
+    var containerEl = document.getElementById(canvasId);
+    var savedHeight = 0;
+    if (existing && containerEl) {
+        savedHeight = containerEl.offsetHeight;
+        containerEl.style.minHeight = savedHeight + 'px';
+    }
+
     if (existing) { existing.destroy(); delete charts[canvasId]; }
     var container = prepareContainer(canvasId);
     if (!container) return;
@@ -450,6 +458,13 @@ function renderChart(canvasId, labels, datasets, type, zones, opts) {
     if (savedZoom && zoomable) {
         chart._zoomRange = savedZoom;
         chart.setScale('x', savedZoom);
+    }
+
+    /* Release fixed container height after chart is rendered */
+    if (savedHeight > 0) {
+        requestAnimationFrame(function() {
+            container.style.minHeight = '';
+        });
     }
 
     /* Responsive resize */
