@@ -175,6 +175,11 @@ int main(int argc, char **argv) {
             perror("socket");
             return 2;
         }
+        if (seteuid(getuid()) != 0) {
+            perror("seteuid");
+            close(sock);
+            return 2;
+        }
         close(sock);
         puts("ok");
         return 0;
@@ -207,7 +212,11 @@ int main(int argc, char **argv) {
     }
 
     /* Immediately drop privileges */
-    seteuid(getuid());
+    if (seteuid(getuid()) != 0) {
+        perror("seteuid");
+        close(sock);
+        return 2;
+    }
 
     struct sockaddr_in dest;
     memset(&dest, 0, sizeof(dest));
