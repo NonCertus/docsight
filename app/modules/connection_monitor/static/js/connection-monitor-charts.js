@@ -240,12 +240,12 @@ var CMCharts = (function() {
         datasets.forEach(function(ds) {
             ds.data.forEach(function(v) { if (v != null && v > dataMax) dataMax = v; });
         });
-        // Snap to next threshold zone boundary for clean visuals
+        // 40ms floor ensures green zone is always visible with breathing room.
+        // Above 30ms: moderate headroom. Above 100ms: tighter headroom.
         var yMax;
-        if (dataMax <= 30) yMax = Math.max(dataMax * 1.3, 10);
-        else if (dataMax <= 100) yMax = Math.min(dataMax * 1.2, 120);
-        else yMax = dataMax * 1.15;
-        yMax = Math.ceil(yMax);
+        if (dataMax <= 30) yMax = 40;
+        else if (dataMax <= 100) yMax = Math.ceil(dataMax * 1.2);
+        else yMax = Math.ceil(dataMax * 1.15);
 
         // PingPlotter-style threshold zones (vertically scaled backgrounds)
         // lineColor: transparent suppresses the dashed boundary lines
