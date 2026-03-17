@@ -818,7 +818,7 @@ class TestRestartDetection:
         assert len(restart_events) == 1
 
     def test_no_false_positive_missing_summary_keys(self, detector):
-        """Missing summary error keys must not cause false positive."""
+        """Missing cur summary keys: sanity check skipped, per-channel signal sufficient."""
         prev, cur = self._make_restart_pair()
         # Remove summary error keys entirely from cur
         del cur["summary"]["ds_correctable_errors"]
@@ -826,9 +826,9 @@ class TestRestartDetection:
         detector.check(prev)
         events = detector.check(cur)
         restart_events = [e for e in events if e["event_type"] == "modem_restart_detected"]
-        # Per-channel signal is there, but sanity check is skipped (not enforced)
-        # so per-channel alone is enough — this SHOULD detect.
-        # The key point: if summary keys are missing on PREV, no false positive.
+        # Per-channel signal is strong (all channels declined), sanity check
+        # skipped because cur summary keys are missing — detection still works.
+        assert len(restart_events) == 1
 
     def test_no_false_positive_prev_missing_summary(self, detector):
         """If prev has no summary error keys, sanity check skipped, no false positive from 0-default."""
