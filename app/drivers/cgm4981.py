@@ -110,7 +110,7 @@ def _modulation(raw: str) -> str:
     """Normalise modulation string for DOCSight's analyser.
 
     Maps common CGM4981 values:
-      '256 QAM' → 'QAM256'
+      '256 QAM' → '256QAM'
       'OFDM'    → 'OFDM'
       'OFDMA'   → 'OFDMA'
       'QAM'     → 'QAM'   (upstream SC-QAM without order)
@@ -120,10 +120,10 @@ def _modulation(raw: str) -> str:
         return "OFDMA"
     if "OFDM" in up:
         return "OFDM"
-    # '256 QAM' → 'QAM256', '64 QAM' → 'QAM64', etc.
+    # '256 QAM' → '256QAM', '64 QAM' → '64QAM', etc.
     m = re.search(r"(\d+)\s*QAM", up)
     if m:
-        return f"QAM{m.group(1)}"
+        return f"{m.group(1)}QAM"
     if "QAM" in up:
         return "QAM"
     return raw.strip()
