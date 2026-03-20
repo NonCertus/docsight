@@ -134,5 +134,22 @@
   "complaint_bnetz_ul": "",
   "complaint_bnetz_verdict": "",
   "complaint_bnetz_legal": "",
-  "issue_labels": ""
+  "issue_labels": {
+    "ds_power_critical": "",
+    "ds_power_marginal": "",
+    "ds_power_tolerated": "",
+    "us_power_critical_low": "",
+    "us_power_critical_high": "",
+    "us_power_marginal_low": "",
+    "us_power_marginal_high": "",
+    "us_power_tolerated_low": "",
+    "us_power_tolerated_high": "",
+    "snr_critical": "",
+    "snr_marginal": "",
+    "snr_tolerated": "",
+    "us_modulation_critical": "",
+    "us_modulation_marginal": "",
+    "uncorr_errors_high": "",
+    "uncorr_errors_critical": ""
+  }
 }
