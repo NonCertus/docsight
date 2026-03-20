@@ -75,10 +75,10 @@ def _text(html: str) -> str:
     return _RE_STRIP.sub("", html).strip()
 
 
-def _float(raw: str) -> float:
-    """Return first float found in a string, e.g. '44.1 dB' → 44.1."""
+def _float(raw: str) -> float | None:
+    """Return first float found in a string, or None if absent."""
     m = _RE_NUMBER.search(raw.strip())
-    return float(m.group()) if m else 0.0
+    return float(m.group()) if m else None
 
 
 def _freq_mhz(raw: str) -> str:
