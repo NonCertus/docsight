@@ -58,6 +58,7 @@ class SpeedtestCollector(Collector):
                     # Remote reachable but empty — server was wiped
                     log.info("Remote has no results but cache has %d, clearing", cached_count)
                     self._storage.clear_cache()
+                    self._web.clear_speedtest_latest()
                     cached_count = 0
                 elif results and results[0].get("id", 0) < last_id:
                     log.info(
