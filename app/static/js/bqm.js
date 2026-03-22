@@ -2,6 +2,11 @@
 /* Calendar navigation, live refresh, slideshow, graph display, and image import */
 /* Note: innerHTML usage is safe here — all data is from trusted server responses or internal state */
 
+/* Defensive fallback if bqm-chart.js fails to load */
+if (typeof BQMChart === 'undefined') {
+    var BQMChart = { render: function() {}, destroy: function() {} };
+}
+
 /* ── BQM State ── */
 var bqmDate = todayStr();
 var _bqmAvailableDates = new Set();
