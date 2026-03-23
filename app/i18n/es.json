@@ -413,6 +413,7 @@
     "gaming_comp_packet_loss_detail": "Porcentaje de paquetes perdidos. Incluso 1% causa picos de lag notables.",
     "gaming_comp_docsis_health_detail": "Estado general de la senal de cable basado en niveles de potencia, SNR y tasas de error.",
     "gaming_comp_snr_headroom_detail": "Margen de senal sobre ruido por encima del umbral minimo. Mas margen significa mas estabilidad.",
+    "gaming_genres_all_ok": "Todos los generos: Excelente conexion para todo tipo de juegos en linea.",
     "gaming_genres_title": "Compatibilidad de juegos",
     "gaming_genre_fps": "FPS Competitivo",
     "gaming_genre_fps_a": "Perfecto. Juego competitivo al mas alto nivel.",

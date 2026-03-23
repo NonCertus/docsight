@@ -418,6 +418,7 @@
     "gaming_comp_packet_loss_detail": "Percentage of lost packets. Even 1% causes noticeable lag spikes.",
     "gaming_comp_docsis_health_detail": "Overall cable signal health based on power levels, SNR, and error rates.",
     "gaming_comp_snr_headroom_detail": "Signal-to-noise margin above minimum threshold. More headroom means more stability.",
+    "gaming_genres_all_ok": "All game genres: Excellent connection for all types of online gaming.",
     "gaming_genres_title": "Game Compatibility",
     "gaming_genre_fps": "Competitive FPS",
     "gaming_genre_fps_a": "Perfect. Competitive play at the highest level.",

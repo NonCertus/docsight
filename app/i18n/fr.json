@@ -410,6 +410,7 @@
     "gaming_comp_packet_loss_detail": "Pourcentage de paquets perdus. Meme 1% provoque des pics de lag notables.",
     "gaming_comp_docsis_health_detail": "Etat general du signal cable base sur les niveaux de puissance, le SNR et les taux d'erreur.",
     "gaming_comp_snr_headroom_detail": "Marge signal-bruit au-dessus du seuil minimum. Plus de marge signifie plus de stabilite.",
+    "gaming_genres_all_ok": "Tous les genres de jeux : Excellente connexion pour tous les types de jeux en ligne.",
     "gaming_genres_title": "Compatibilite des jeux",
     "gaming_genre_fps": "FPS Competitif",
     "gaming_genre_fps_a": "Parfait. Jeu competitif au plus haut niveau.",

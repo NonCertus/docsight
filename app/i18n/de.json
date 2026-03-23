@@ -418,6 +418,7 @@
     "gaming_comp_packet_loss_detail": "Anteil verlorener Pakete. Schon 1% verursacht spürbare Verzögerungsspitzen.",
     "gaming_comp_docsis_health_detail": "Gesamtzustand des Kabelsignals basierend auf Pegel, SNR und Fehlerraten.",
     "gaming_comp_snr_headroom_detail": "Signal-Rausch-Abstand über dem Mindestwert. Mehr Reserve bedeutet mehr Stabilität.",
+    "gaming_genres_all_ok": "Alle Spielgenres: Hervorragende Verbindung fuer alle Arten von Online-Gaming.",
     "gaming_genres_title": "Spielekompatibilität",
     "gaming_genre_fps": "Kompetitiver Shooter",
     "gaming_genre_fps_a": "Perfekt. Kompetitives Spielen auf höchstem Niveau.",

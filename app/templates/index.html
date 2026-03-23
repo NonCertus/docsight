@@ -1731,13 +1731,12 @@
 
 {% if gaming_quality_enabled %}
 <div id="view-gaming" class="view">
-    <div class="trend-header">
-        <span class="trend-title">{{ t.gaming_quality_label }}</span>
-    </div>
     {% if gaming_index %}
+    {% set s = gaming_index.score %}
+    {% set g = gaming_index.grade|lower %}
+    <!-- Gauge hero (no title - sidebar already names this view) -->
     <div class="gaming-overview">
         <div class="gaming-gauge">
-            {% set s = gaming_index.score %}
             <div class="gaming-gauge-band">
                 <div class="gaming-gauge-segment gauge-f"><span>F</span></div>
                 <div class="gaming-gauge-segment gauge-d"><span>D</span></div>
@@ -1752,62 +1751,73 @@
                 </div>
             </div>
             {% if not gaming_index.has_speedtest %}
-            <p class="gaming-no-speedtest-hint"><i data-lucide="info" style="width:14px;height:14px;vertical-align:-2px;"></i> {{ t.gaming_no_speedtest_detail }}</p>
+            <p class="gaming-no-speedtest-hint"><i data-lucide="info"></i> {{ t.gaming_no_speedtest_detail }}</p>
             {% endif %}
         </div>
-        <div class="gaming-grade-big gaming-{{ gaming_index.grade|lower }}">
+        <div class="gaming-grade-big gaming-{{ g }}">
             <span class="gaming-grade-letter">{{ gaming_index.grade }}</span>
-            <span class="gaming-grade-text">{{ t['gaming_grade_' ~ gaming_index.grade|lower] }}</span>
+            <span class="gaming-grade-text">{{ t['gaming_grade_' ~ g] }}</span>
         </div>
     </div>
+
+    <!-- Compact score breakdown (collapsed descriptions) -->
     <div class="gaming-components">
         <h3 class="gaming-section-title">{{ t.gaming_components_title }}</h3>
+        <div class="gaming-comp-grid">
         {% for key, comp in gaming_index.components.items()|sort(attribute='1.weight', reverse=true) %}
-        <div class="gaming-component-card">
-            <div class="gaming-comp-header">
+            <div class="gaming-comp-row" tabindex="0" role="button" aria-expanded="false" onclick="this.classList.toggle('open');this.setAttribute('aria-expanded',this.classList.contains('open'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
                 <span class="gaming-comp-icon">
-                    {% if key == 'latency' %}<i data-lucide="timer" style="width:16px;height:16px;"></i>
-                    {% elif key == 'jitter' %}<i data-lucide="waves" style="width:16px;height:16px;"></i>
-                    {% elif key == 'packet_loss' %}<i data-lucide="package-x" style="width:16px;height:16px;"></i>
-                    {% elif key == 'docsis_health' %}<i data-lucide="heart-pulse" style="width:16px;height:16px;"></i>
-                    {% elif key == 'snr_headroom' %}<i data-lucide="signal" style="width:16px;height:16px;"></i>
+                    {% if key == 'latency' %}<i data-lucide="timer"></i>
+                    {% elif key == 'jitter' %}<i data-lucide="waves"></i>
+                    {% elif key == 'packet_loss' %}<i data-lucide="package-x"></i>
+                    {% elif key == 'docsis_health' %}<i data-lucide="heart-pulse"></i>
+                    {% elif key == 'snr_headroom' %}<i data-lucide="signal"></i>
                     {% endif %}
                 </span>
                 <span class="gaming-comp-name">{{ t['gaming_comp_' ~ key] }}</span>
                 <span class="gaming-comp-weight">{{ comp.weight }}%</span>
+                <div class="gaming-comp-bar-inline">
+                    <div class="gaming-comp-fill {% if comp.score >= 80 %}fill-good{% elif comp.score >= 50 %}fill-warn{% else %}fill-crit{% endif %}" style="width:{{ comp.score }}%;"></div>
+                </div>
                 <span class="gaming-comp-score {% if comp.score >= 80 %}score-good{% elif comp.score >= 50 %}score-warn{% else %}score-crit{% endif %}">{{ comp.score }}</span>
-            </div>
-            <div class="gaming-comp-bar">
-                <div class="gaming-comp-fill {% if comp.score >= 80 %}fill-good{% elif comp.score >= 50 %}fill-warn{% else %}fill-crit{% endif %}" style="width:{{ comp.score }}%;"></div>
+                <i data-lucide="chevron-down" class="gaming-comp-chevron"></i>
             </div>
             <p class="gaming-comp-detail">{{ t['gaming_comp_' ~ key ~ '_detail'] }}</p>
-        </div>
         {% endfor %}
+        </div>
     </div>
+
+    <!-- Game compatibility (collapsed when all green) -->
     <div class="gaming-genres">
         <h3 class="gaming-section-title">{{ t.gaming_genres_title }}</h3>
-        {% set g = gaming_index.grade|lower %}
-        <div class="gaming-genre-cards">
-            <div class="gaming-genre-card {% if g in ['a'] %}genre-ok{% elif g in ['b'] %}genre-ok{% elif g in ['c'] %}genre-warn{% else %}genre-bad{% endif %}">
-                <span class="gaming-genre-icon"><i data-lucide="crosshair" style="width:18px;height:18px;"></i></span>
+        {% set all_ok = g in ['a', 'b'] %}
+        {% if all_ok %}
+        <div class="gaming-genres-summary genre-ok">
+            <i data-lucide="check-circle"></i>
+            <span>{{ t.get('gaming_genres_all_ok', 'All game genres: Excellent connection for all types of online gaming.') }}</span>
+        </div>
+        {% endif %}
+        <div class="gaming-genre-cards {% if all_ok %}gaming-genres-collapsed{% endif %}">
+            <div class="gaming-genre-card {% if g in ['a', 'b'] %}genre-ok{% elif g in ['c'] %}genre-warn{% else %}genre-bad{% endif %}">
+                <span class="gaming-genre-icon"><i data-lucide="crosshair"></i></span>
                 <span class="gaming-genre-name">{{ t.gaming_genre_fps }}</span>
                 <span class="gaming-genre-examples">CS2, Valorant, Fortnite</span>
                 <span class="gaming-genre-verdict">{{ t['gaming_genre_fps_' ~ g] }}</span>
             </div>
-            <div class="gaming-genre-card {% if g in ['a', 'b'] %}genre-ok{% elif g in ['c'] %}genre-ok{% else %}genre-bad{% endif %}">
-                <span class="gaming-genre-icon"><i data-lucide="swords" style="width:18px;height:18px;"></i></span>
+            <div class="gaming-genre-card {% if g in ['a', 'b', 'c'] %}genre-ok{% else %}genre-bad{% endif %}">
+                <span class="gaming-genre-icon"><i data-lucide="swords"></i></span>
                 <span class="gaming-genre-name">{{ t.gaming_genre_moba }}</span>
                 <span class="gaming-genre-examples">LoL, Dota 2, HotS</span>
                 <span class="gaming-genre-verdict">{{ t['gaming_genre_moba_' ~ g] }}</span>
             </div>
-            <div class="gaming-genre-card {% if g in ['a', 'b'] %}genre-ok{% elif g in ['c', 'd'] %}genre-ok{% else %}genre-bad{% endif %}">
-                <span class="gaming-genre-icon"><i data-lucide="globe" style="width:18px;height:18px;"></i></span>
+            <div class="gaming-genre-card {% if g in ['a', 'b', 'c', 'd'] %}genre-ok{% else %}genre-bad{% endif %}">
+                <span class="gaming-genre-icon"><i data-lucide="globe"></i></span>
                 <span class="gaming-genre-name">{{ t.gaming_genre_mmo }}</span>
                 <span class="gaming-genre-examples">WoW, FFXIV, GW2</span>
                 <span class="gaming-genre-verdict">{{ t['gaming_genre_mmo_' ~ g] }}</span>
             </div>
             <div class="gaming-genre-card {% if g in ['a', 'b', 'c'] %}genre-ok{% elif g in ['d'] %}genre-warn{% else %}genre-bad{% endif %}">
-                <span class="gaming-genre-icon"><i data-lucide="crown" style="width:18px;height:18px;"></i></span>
+                <span class="gaming-genre-icon"><i data-lucide="crown"></i></span>
                 <span class="gaming-genre-name">{{ t.gaming_genre_strategy }}</span>
                 <span class="gaming-genre-examples">Civilization, AoE, Chess</span>
                 <span class="gaming-genre-verdict">{{ t['gaming_genre_strategy_' ~ g] }}</span>
