@@ -128,9 +128,6 @@
     align-items: center;
 }
 
-/* Value highlighting */
-.val-bad { color: var(--crit); }
-
 /* Empty state */
 .speedtest-empty-state {
     display: flex;

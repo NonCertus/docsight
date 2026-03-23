@@ -33,6 +33,7 @@ function loadSpeedtestHistory() {
     if (moreWrap) moreWrap.style.display = 'none';
     _speedtestRawData = [];
     _speedtestAllData = [];
+    _signalCache = {};
     _speedtestVisible = 50;
     fetch('/api/speedtest?count=2000')
         .then(function(r) { return r.json(); })
@@ -275,7 +276,6 @@ function toggleSpeedtestSignal(btn) {
     var cols = parentRow.children.length;
     var td = document.createElement('td');
     td.colSpan = cols;
-    td.textContent = '...';
     var detailDiv = document.createElement('div');
     detailDiv.className = 'st-signal-detail';
     var loadSpan = document.createElement('span');
@@ -283,7 +283,6 @@ function toggleSpeedtestSignal(btn) {
     loadSpan.style.textAlign = 'center';
     loadSpan.textContent = '...';
     detailDiv.appendChild(loadSpan);
-    td.textContent = '';
     td.appendChild(detailDiv);
     newRow.appendChild(td);
     parentRow.after(newRow);
@@ -502,14 +501,19 @@ function renderSpeedtestChart() {
             tooltip.appendChild(span);
             tooltip.appendChild(document.createTextNode(' ' + line.label + ': ' + line.val));
         });
-        // Position with edge detection
+        // Position with edge detection (horizontal + vertical)
         var tipW = tooltip.offsetWidth || 160;
+        var tipH = tooltip.offsetHeight || 60;
         var leftPos = clientX + 14;
         if (leftPos + tipW > window.innerWidth - 8) {
             leftPos = clientX - tipW - 14;
         }
+        var topPos = clientY - 10;
+        if (topPos + tipH > window.innerHeight - 8) {
+            topPos = clientY - tipH - 14;
+        }
         tooltip.style.left = leftPos + 'px';
-        tooltip.style.top = (clientY - 10) + 'px';
+        tooltip.style.top = topPos + 'px';
     }
     function onMouseMove(e) { showTooltipAt(e.clientX, e.clientY); }
     function onMouseLeave() { tooltip.style.display = 'none'; }
@@ -525,7 +529,10 @@ function renderSpeedtestChart() {
     if (canvas._chartMoveHandler) canvas.removeEventListener('mousemove', canvas._chartMoveHandler);
     if (canvas._chartLeaveHandler) canvas.removeEventListener('mouseleave', canvas._chartLeaveHandler);
     if (canvas._chartTouchMoveHandler) canvas.removeEventListener('touchmove', canvas._chartTouchMoveHandler);
-    if (canvas._chartTouchEndHandler) canvas.removeEventListener('touchend', canvas._chartTouchEndHandler);
+    if (canvas._chartTouchEndHandler) {
+        canvas.removeEventListener('touchend', canvas._chartTouchEndHandler);
+        canvas.removeEventListener('touchcancel', canvas._chartTouchEndHandler);
+    }
     canvas._chartMoveHandler = onMouseMove;
     canvas._chartLeaveHandler = onMouseLeave;
     canvas._chartTouchMoveHandler = onTouchMove;
@@ -534,6 +541,7 @@ function renderSpeedtestChart() {
     canvas.addEventListener('mouseleave', onMouseLeave);
     canvas.addEventListener('touchmove', onTouchMove, {passive: false});
     canvas.addEventListener('touchend', onTouchEnd);
+    canvas.addEventListener('touchcancel', onTouchEnd);
 }
 
 // Resize handler for speedtest chart only

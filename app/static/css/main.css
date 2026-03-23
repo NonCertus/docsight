@@ -742,6 +742,7 @@ body.is-offline .offline-banner { display: flex; }
 /* Value color utilities (used across channel, BNetzA, speedtest tables) */
 .val-good { color: var(--good); }
 .val-tolerated { color: var(--tolerated); }
+.val-bad { color: var(--crit); }
 .val-warn { color: var(--warn); }
 .val-crit { color: var(--crit); }
 /* Per-metric health coloring via data attributes (channel tables) */
