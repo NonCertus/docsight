@@ -1111,9 +1111,21 @@ html, body {
   height: 14px;
 }
 
-/* Light mode adjustments */
+/* Light mode adjustments — amethyst-light (#a78bfa) lacks contrast on light surfaces */
 [data-theme="light"] .support-card-primary {
   background: linear-gradient(135deg, color-mix(in srgb, var(--amethyst) 8%, transparent), color-mix(in srgb, var(--sapphire) 5%, transparent));
+}
+[data-theme="light"] .support-card-primary-icon {
+  color: var(--amethyst);
+}
+[data-theme="light"] .support-card-primary:hover .support-card-arrow {
+  color: var(--amethyst);
+}
+[data-theme="light"] .support-card:hover .support-card-icon {
+  color: var(--amethyst);
+}
+[data-theme="light"] .support-star-link {
+  color: var(--amethyst);
 }
 [data-theme="light"] .support-quote cite {
   color: var(--amethyst);
@@ -1349,6 +1361,8 @@ html, body {
   }
   .form-grid.cols-2 { grid-template-columns: 1fr; }
   .support-grid { grid-template-columns: 1fr; }
+  .support-star { flex-wrap: wrap; }
+  .support-star-link { margin-left: 0; }
   .save-footer { left: 0; }
   .mobile-header { display: flex !important; }
   .settings-card { padding: 18px; }
