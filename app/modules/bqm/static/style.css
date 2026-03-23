@@ -81,7 +81,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: var(--space-sm);
+    border-radius: var(--radius-sm);
     font-size: 0.85em;
     position: relative;
     color: var(--text-muted);
@@ -194,7 +194,7 @@
 
 /* ── Import ── */
 .bqm-import-btn {
-    padding: var(--space-xs) 7px;
+    padding: var(--space-xs) var(--space-sm);
 }
 .bqm-import-table {
     width: 100%;
@@ -203,14 +203,14 @@
 }
 .bqm-import-table th {
     text-align: left;
-    padding: 6px var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
     border-bottom: 1px solid var(--input-border);
     color: var(--muted);
     font-weight: 500;
     font-size: 0.85em;
 }
 .bqm-import-table td {
-    padding: 6px var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
     border-bottom: 1px solid var(--glass-border);
     vertical-align: middle;
 }
@@ -234,9 +234,8 @@
     background: var(--warn-muted);
     color: var(--warn);
     font-size: 0.75em;
-    padding: 1px 6px;
+    padding: 2px var(--space-sm);
     border-radius: var(--space-sm);
-    margin-top: 2px;
 }
 .bqm-import-date-missing {
     border-color: var(--crit) !important;
