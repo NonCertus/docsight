@@ -1,0 +1,167 @@
+/* Connection Monitor — Module Styles */
+
+/* ── Detail View Header ── */
+.cm-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
+}
+.cm-header h2 {
+    margin: 0;
+}
+.cm-header-spacer {
+    flex: 1;
+}
+.cm-capability {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+/* ── Time Range Picker ── */
+.cm-range-picker {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
+}
+
+/* ── Pinned Days ── */
+.cm-pinned-bar {
+    display: none;
+    margin-bottom: var(--space-md);
+}
+.cm-pinned-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+.cm-pinned-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+.cm-pinned-days {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+}
+
+/* ── No Data State ── */
+.cm-no-data {
+    display: none;
+    text-align: center;
+    padding: var(--space-2xl) var(--space-lg);
+    color: var(--text-muted);
+}
+
+/* ── Stats Cards Grid ── */
+.cm-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+/* ── Glass Section Cards ── */
+.cm-section {
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+.cm-section h3 {
+    margin: 0 0 var(--space-sm);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+.cm-section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    flex-wrap: wrap;
+}
+.cm-section-header h3 {
+    margin: 0;
+}
+.cm-section-spacer {
+    flex: 1;
+}
+.cm-section-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ── Availability Band ── */
+.cm-availability-band {
+    height: 24px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    display: flex;
+}
+
+/* ── Resolution Indicator ── */
+.cm-resolution {
+    display: none;
+    text-align: right;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--space-xs);
+}
+
+/* ── Export Links ── */
+.cm-export-links {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+}
+
+/* ── Table Wrapper ── */
+.cm-table-wrap {
+    overflow-x: auto;
+}
+.text-right {
+    text-align: right;
+}
+
+/* ── Traceroute Section ── */
+.cm-traceroute-targets {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: center;
+    flex-wrap: wrap;
+}
+.cm-traceroute-btn {
+    font-size: 0.85rem;
+    min-height: 44px;
+}
+.cm-traceroute-result {
+    display: none;
+    margin-bottom: var(--space-sm);
+}
+.cm-traceroute-empty {
+    display: none;
+    text-align: center;
+    padding: var(--space-lg);
+    color: var(--text-muted);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .cm-header {
+        gap: var(--space-sm);
+    }
+    .cm-section {
+        padding: var(--space-sm);
+    }
+    .cm-stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+    .cm-range-picker .trend-tab {
+        min-height: 44px;
+        padding: var(--space-sm) var(--space-md);
+    }
+}
