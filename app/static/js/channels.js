@@ -150,11 +150,13 @@ function switchChannelMode() {
     var comparePanel = document.getElementById('channel-panel-compare');
     var timelineControls = document.getElementById('channel-timeline-controls');
     var compareControls = document.getElementById('channel-compare-controls');
+    var infoBar = document.getElementById('channel-info-bar');
     if (mode === 'compare') {
         timelinePanel.style.display = 'none';
         comparePanel.style.display = '';
         if (timelineControls) timelineControls.style.display = 'none';
         if (compareControls) compareControls.style.display = 'contents';
+        if (infoBar) infoBar.style.display = 'none';
         loadCompareChannelList();
         if (_compareChannels.length === 0) {
             var emptyEl = document.getElementById('compare-empty');
@@ -388,8 +390,8 @@ function loadChannelTimeline() {
         })
         .catch(function() {
             loadingEl.style.display = 'none';
-            emptyEl.textContent = T.trend_error || 'Error loading data.';
-            emptyEl.style.display = '';
+            noDataEl.textContent = T.trend_error || 'Error loading data.';
+            noDataEl.style.display = '';
         });
 }
 window.loadChannelTimeline = loadChannelTimeline;
