@@ -397,7 +397,7 @@ function renderCorrelationChart(data) {
                     ctx.bezierCurveTo(cpx, y0, x - (x - x0) * 0.4, y, x, y);
                 }
             }
-            ctx.strokeStyle = goodColor;
+            ctx.strokeStyle = downloadColor;
             ctx.lineWidth = 2;
             ctx.stroke();
         }
@@ -427,7 +427,7 @@ function renderCorrelationChart(data) {
             if (_corrVisible.download) {
                 ctx.beginPath();
                 ctx.arc(x, yDl(sortedSpeedtest[i].download_mbps || 0), 3, 0, Math.PI * 2);
-                ctx.fillStyle = goodColor;
+                ctx.fillStyle = downloadColor;
                 ctx.fill();
             }
             if (_corrVisible.upload) {
@@ -442,7 +442,7 @@ function renderCorrelationChart(data) {
         if (_corrVisible.download) {
             ctx.beginPath();
             ctx.arc(x, yDl(sortedSpeedtest[0].download_mbps || 0), 5, 0, Math.PI * 2);
-            ctx.fillStyle = goodColor;
+            ctx.fillStyle = downloadColor;
             ctx.fill();
         }
         if (_corrVisible.upload) {
