@@ -331,6 +331,8 @@
     "signal_ds_channels": "Canaux DS",
     "signal_us_channels": "Canaux US",
     "signal_snapshot_time": "Snapshot",
+    "channel_onboarding_title": "Historique du canal",
+    "channel_onboarding_desc": "Selectionnez un canal dans la liste pour voir son historique.",
     "channel_timeline": "Historique du canal",
     "select_channel": "Choisir un canal",
     "downstream_channels": "Canaux descendants",

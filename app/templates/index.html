@@ -1338,10 +1338,7 @@
 
 <!-- ═══ View: Channel Timeline ═══ -->
 <div id="view-channels" class="view">
-    <div class="trend-header" style="margin-bottom:12px;">
-        <span class="trend-title">{{ t.channels }}</span>
-    </div>
-    <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; align-items:center;">
+    <div class="ch-controls">
         <div class="trend-tabs" id="channel-mode-tabs">
             <button class="trend-tab active" data-value="timeline" onclick="selectPill(this, switchChannelMode)">{{ t.channel_timeline }}</button>
             <button class="trend-tab" data-value="compare" onclick="selectPill(this, switchChannelMode)">{{ t.channel_compare }}</button>
@@ -1375,12 +1372,22 @@
         </span>
     </div>
 
+    <!-- Channel info bar (populated by JS after channel selection) -->
+    <div id="channel-info-bar" class="ch-info-bar" style="display:none;"></div>
+
     <!-- ── Timeline Sub-View ── -->
     <div id="channel-panel-timeline">
         <div id="channel-loading" class="waiting" style="display:none;">
             <div class="skeleton skel-chart"></div>
         </div>
-        <div id="channel-empty" class="events-empty" style="display:none;"></div>
+        <div id="channel-empty" class="ch-onboarding" style="display:none;">
+            <i data-lucide="layers"></i>
+            <div class="ch-onboarding-text">
+                <strong>{{ t.get('channel_onboarding_title', 'Channel Timeline') }}</strong>
+                <span>{{ t.get('channel_onboarding_desc', 'Select a channel from the dropdown to view its signal history over time.') }}</span>
+            </div>
+        </div>
+        <div id="channel-no-data" class="no-data-msg" style="display:none;"></div>
         <div id="channel-charts" class="charts-grid" style="display:none;">
             <div class="chart-card">
                 <div class="chart-card-header">
@@ -1408,7 +1415,7 @@
                 </div>
                 <canvas id="chart-ch-errors"></canvas>
             </div>
-            <div class="chart-card" id="channel-modulation-card">
+            <div class="chart-card ch-full-width" id="channel-modulation-card">
                 <div class="chart-card-header">
                     <div class="chart-header-content">
                         <svg class="chart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

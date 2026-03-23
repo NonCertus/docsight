@@ -339,6 +339,8 @@
     "signal_ds_channels": "DS Kanäle",
     "signal_us_channels": "US Kanäle",
     "signal_snapshot_time": "Snapshot",
+    "channel_onboarding_title": "Kanal-Verlauf",
+    "channel_onboarding_desc": "Waehle einen Kanal aus dem Dropdown um den Signalverlauf zu sehen.",
     "channel_timeline": "Kanalverlauf",
     "select_channel": "Kanal wählen",
     "downstream_channels": "Downstream Kanäle",

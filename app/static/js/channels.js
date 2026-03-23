@@ -150,11 +150,13 @@ function switchChannelMode() {
     var comparePanel = document.getElementById('channel-panel-compare');
     var timelineControls = document.getElementById('channel-timeline-controls');
     var compareControls = document.getElementById('channel-compare-controls');
+    var infoBar = document.getElementById('channel-info-bar');
     if (mode === 'compare') {
         timelinePanel.style.display = 'none';
         comparePanel.style.display = '';
         if (timelineControls) timelineControls.style.display = 'none';
         if (compareControls) compareControls.style.display = 'contents';
+        if (infoBar) infoBar.style.display = 'none';
         loadCompareChannelList();
         if (_compareChannels.length === 0) {
             var emptyEl = document.getElementById('compare-empty');
@@ -168,9 +170,12 @@ function switchChannelMode() {
         if (compareControls) compareControls.style.display = 'none';
         var sel = document.getElementById('channel-select');
         if (!sel || !sel.value) {
-            var chEmpty = document.getElementById('channel-empty');
-            chEmpty.textContent = T.channel_select_prompt || 'Select a channel above to view its signal history.';
-            chEmpty.style.display = '';
+            document.getElementById('channel-empty').style.display = '';
+            document.getElementById('channel-no-data').style.display = 'none';
+        } else {
+            // Restore info bar for already-selected channel
+            var cparts = sel.value.split('-');
+            _updateChannelInfoBar(cparts[0], cparts[1]);
         }
     }
     writeChannelHash();
@@ -213,22 +218,91 @@ function loadChannelList(callback) {
                 });
                 sel.appendChild(grp2);
             }
+            _cachedChannelData = data;
             _channelsLoaded = true;
             if (callback) callback();
         })
         .catch(function() { if (callback) callback(); });
 }
 
+function _makeInfoItem(text, bold) {
+    var el = document.createElement('span');
+    el.className = 'ch-info-item';
+    if (bold) {
+        var b = document.createElement('strong');
+        b.textContent = text;
+        el.appendChild(b);
+    } else {
+        el.textContent = text;
+    }
+    return el;
+}
+function _makeInfoItemWithLabel(label, value, unit) {
+    var el = document.createElement('span');
+    el.className = 'ch-info-item';
+    el.textContent = label + ' ';
+    var b = document.createElement('strong');
+    b.textContent = value;
+    el.appendChild(b);
+    if (unit) el.appendChild(document.createTextNode(' ' + unit));
+    return el;
+}
+function _makeInfoSep() {
+    var el = document.createElement('span');
+    el.className = 'ch-info-sep';
+    return el;
+}
+
+function _updateChannelInfoBar(direction, channelId) {
+    var bar = document.getElementById('channel-info-bar');
+    if (!bar) return;
+    if (!_cachedChannelData) { bar.style.display = 'none'; return; }
+    var channels = direction === 'ds'
+        ? (_cachedChannelData.ds_channels || [])
+        : (_cachedChannelData.us_channels || []);
+    var ch = null;
+    for (var i = 0; i < channels.length; i++) {
+        if (String(channels[i].channel_id) === String(channelId)) { ch = channels[i]; break; }
+    }
+    if (!ch) { bar.style.display = 'none'; return; }
+    while (bar.firstChild) bar.removeChild(bar.firstChild);
+    var dir = direction.toUpperCase();
+    var health = ch.health || 'unknown';
+    var healthLabel = T['health_' + health] || health;
+
+    bar.appendChild(_makeInfoItem(dir + ' ' + channelId, true));
+    bar.appendChild(_makeInfoSep());
+    if (ch.frequency) {
+        var freqStr = String(ch.frequency);
+        bar.appendChild(_makeInfoItem(freqStr.indexOf('MHz') === -1 ? freqStr + ' MHz' : freqStr));
+    }
+    bar.appendChild(_makeInfoItem('DOCSIS ' + (ch.docsis_version || '3.0')));
+    bar.appendChild(_makeInfoSep());
+    if (ch.power != null) bar.appendChild(_makeInfoItemWithLabel('Power', ch.power, 'dBmV'));
+    if (ch.snr != null) bar.appendChild(_makeInfoItemWithLabel('SNR', ch.snr, 'dB'));
+    bar.appendChild(_makeInfoSep());
+    var healthEl = document.createElement('span');
+    healthEl.className = 'ch-info-health ' + health;
+    healthEl.textContent = healthLabel;
+    bar.appendChild(healthEl);
+    bar.style.display = '';
+}
+
+var _cachedChannelData = null;
+
 function loadChannelTimeline() {
     var sel = document.getElementById('channel-select');
     var val = sel.value;
     var chartsEl = document.getElementById('channel-charts');
     var emptyEl = document.getElementById('channel-empty');
+    var noDataEl = document.getElementById('channel-no-data');
     var loadingEl = document.getElementById('channel-loading');
+    var infoBar = document.getElementById('channel-info-bar');
     if (!val) {
         chartsEl.style.display = 'none';
+        noDataEl.style.display = 'none';
         loadingEl.style.display = 'none';
-        emptyEl.textContent = T.channel_select_prompt || 'Select a channel above to view its signal history.';
+        if (infoBar) infoBar.style.display = 'none';
         emptyEl.style.display = '';
         writeChannelHash();
         return;
@@ -244,14 +318,16 @@ function loadChannelTimeline() {
     loadingEl.style.display = '';
     chartsEl.style.display = 'none';
     emptyEl.style.display = 'none';
+    noDataEl.style.display = 'none';
+    _updateChannelInfoBar(direction, channelId);
 
     fetch('/api/channel-history?channel_id=' + channelId + '&direction=' + direction + '&days=' + days)
         .then(function(r) { return r.json(); })
         .then(function(data) {
             loadingEl.style.display = 'none';
             if (!data || data.length === 0) {
-                emptyEl.textContent = T.no_channel_data || 'No data available for this channel.';
-                emptyEl.style.display = '';
+                noDataEl.textContent = T.no_channel_data || 'No data available for this channel.';
+                noDataEl.style.display = '';
                 return;
             }
             chartsEl.style.display = '';
@@ -321,8 +397,8 @@ function loadChannelTimeline() {
         })
         .catch(function() {
             loadingEl.style.display = 'none';
-            emptyEl.textContent = T.trend_error || 'Error loading data.';
-            emptyEl.style.display = '';
+            noDataEl.textContent = T.trend_error || 'Error loading data.';
+            noDataEl.style.display = '';
         });
 }
 window.loadChannelTimeline = loadChannelTimeline;
