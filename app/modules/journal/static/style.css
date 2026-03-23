@@ -873,6 +873,9 @@ mark.search-highlight {
     border-color: var(--accent);
     background: var(--accent-muted);
 }
+.incident-timeline-back:active {
+    opacity: 0.8;
+}
 .incident-timeline-back:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -1121,6 +1124,9 @@ mark.search-highlight {
 .incident-summary-timeline-btn:hover {
     background: var(--accent);
     color: #fff;
+}
+.incident-summary-timeline-btn:active {
+    opacity: 0.85;
 }
 .incident-summary-timeline-btn:focus-visible {
     outline: 2px solid var(--accent);
