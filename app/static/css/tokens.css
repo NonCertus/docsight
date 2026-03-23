@@ -112,6 +112,8 @@
   --crit-muted: rgba(220, 38, 38, 0.12);
   --info: #0891b2;
   --info-muted: rgba(8, 145, 178, 0.12);
+  --tolerated: #65a30d;
+  --tolerated-muted: rgba(101, 163, 13, 0.12);
 
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(120, 100, 160, 0.15);

@@ -137,7 +137,7 @@ function toggleHideOperational() {
 
 function filterEventsBySeverity(severity) {
     _currentSeverityFilter = severity;
-    var pills = document.querySelectorAll('.severity-pill');
+    var pills = document.querySelectorAll('.severity-pill:not(#hide-operational-btn)');
     pills.forEach(function(pill) {
         var isActive = pill.getAttribute('data-severity') === severity;
         pill.classList.toggle('active', isActive);
