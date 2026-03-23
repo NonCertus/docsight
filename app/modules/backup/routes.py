@@ -2,6 +2,8 @@
 
 import logging
 import os
+import time
+from collections import defaultdict
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify, redirect, send_file
@@ -18,6 +20,25 @@ audit_log = logging.getLogger("docsis.audit")
 log = logging.getLogger("docsis.web")
 
 bp = Blueprint("backup_bp", __name__)
+
+# Rate-limit unauthenticated restore attempts (setup-race mitigation)
+_restore_attempts: dict[str, list[float]] = defaultdict(list)
+_RESTORE_MAX_ATTEMPTS = 5
+_RESTORE_WINDOW = 3600  # 1 hour
+
+
+def _check_restore_rate_limit() -> bool:
+    """Return True if the client has exceeded the restore rate limit."""
+    ip = _get_client_ip()
+    now = time.time()
+    attempts = _restore_attempts[ip]
+    _restore_attempts[ip] = [t for t in attempts if now - t < _RESTORE_WINDOW]
+    return len(_restore_attempts[ip]) >= _RESTORE_MAX_ATTEMPTS
+
+
+def _record_restore_attempt():
+    """Record a restore attempt for the current client IP."""
+    _restore_attempts[_get_client_ip()].append(time.time())
 
 
 def _int_config(config_mgr, key, default):
@@ -113,6 +134,11 @@ def api_restore_validate():
     _config_manager = get_config_manager()
     if _config_manager and _config_manager.is_configured() and _auth_required():
         return redirect("/login")
+    if not (_config_manager and _config_manager.is_configured()):
+        if _check_restore_rate_limit():
+            audit_log.warning("Restore rate limit exceeded: ip=%s", _get_client_ip())
+            return jsonify({"error": "Too many attempts"}), 429
+        _record_restore_attempt()
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
     f = request.files["file"]
@@ -139,6 +165,11 @@ def api_restore():
     _config_manager = get_config_manager()
     if _config_manager and _config_manager.is_configured() and _auth_required():
         return redirect("/login")
+    if not (_config_manager and _config_manager.is_configured()):
+        if _check_restore_rate_limit():
+            audit_log.warning("Restore rate limit exceeded: ip=%s", _get_client_ip())
+            return jsonify({"error": "Too many attempts"}), 429
+        _record_restore_attempt()
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
     f = request.files["file"]

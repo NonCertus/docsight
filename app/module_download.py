@@ -40,6 +40,9 @@ def fetch_registry(registry_url: str, key: str = "modules", timeout: int = 10) -
         key: top-level key in the JSON (e.g., "modules" or "themes")
         timeout: request timeout in seconds
     """
+    if not is_trusted_url(registry_url):
+        log.error("Refusing registry fetch: untrusted URL %s", registry_url)
+        return []
     try:
         with urllib.request.urlopen(registry_url, timeout=timeout) as resp:
             data = json.loads(resp.read())

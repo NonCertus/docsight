@@ -246,13 +246,25 @@ def _valid_date(date_str):
     except ValueError:
         return False
 _SAFE_HTML_RE = re.compile(r"<(?!/?(?:b|a|strong|em|br)\b)[^>]+>", re.IGNORECASE)
+_DANGEROUS_ATTR_RE = re.compile(
+    r'\s+(?:on\w+|formaction)\s*=\s*["\'][^"\']*["\']', re.IGNORECASE
+)
+_JAVASCRIPT_HREF_RE = re.compile(
+    r'href\s*=\s*["\']?\s*javascript:', re.IGNORECASE
+)
 
 
 @app.template_filter("safe_html")
 def safe_html_filter(value):
-    """Allow only <b>, <a>, <strong>, <em>, <br> tags — strip everything else."""
+    """Allow only <b>, <a>, <strong>, <em>, <br> tags — strip everything else.
+
+    Additionally strips event-handler attributes and javascript: hrefs
+    from allowed tags to prevent XSS.
+    """
     from markupsafe import Markup
     cleaned = _SAFE_HTML_RE.sub("", str(value))
+    cleaned = _DANGEROUS_ATTR_RE.sub("", cleaned)
+    cleaned = _JAVASCRIPT_HREF_RE.sub('href="', cleaned)
     return Markup(cleaned)
 
 
