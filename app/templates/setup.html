@@ -23,12 +23,12 @@
 
 <!-- Controls Bar -->
 <div class="setup-controls">
-    <select class="btn btn-ghost setup-lang-select" id="lang-select" onchange="location.href='?lang='+this.value" aria-label="Select language">
+    <select class="btn btn-ghost setup-lang-select" id="lang-select" onchange="location.href='?lang='+this.value" aria-label="{{ t.language }}">
         {% for code, name in languages.items() %}
         <option value="{{ code }}" {% if code == lang %}selected{% endif %}>{{ lang_flags.get(code, '') }} {{ name }}</option>
         {% endfor %}
     </select>
-    <button class="btn btn-ghost setup-theme-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+    <button class="btn btn-ghost setup-theme-btn" onclick="toggleTheme()">
         <i data-lucide="sun-moon" class="setup-icon-sm"></i> {{ t.theme_toggle }}
     </button>
 </div>
