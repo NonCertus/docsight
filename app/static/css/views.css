@@ -643,6 +643,10 @@
     opacity: 0.5;
 }
 
+.corr-legend-events {
+    position: relative;
+}
+
 .corr-event-filter-btn {
     cursor: pointer;
     font-size: 0.8em;

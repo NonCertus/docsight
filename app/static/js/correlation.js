@@ -181,6 +181,7 @@ function renderCorrelationChart(data) {
     var segUsColor = _cssColor('--corr-color-seg-us', '#6366f1');
     function ySegment(v) { return pad.top + plotH - (v / 100) * plotH; }
 
+    var downloadColor = _cssColor('--corr-color-download', '#0ea5e9');
     var uploadColor = _cssColor('--corr-color-upload', '#06b6d4');
     var snrColor = _cssColor('--corr-color-snr', 'rgba(168,85,247,1)');
     var txColor = _cssColor('--corr-color-tx-power', '#f59e0b');
@@ -188,13 +189,12 @@ function renderCorrelationChart(data) {
     var errorColor = _cssColor('--corr-color-errors', 'rgba(239,68,68,0.6)');
     var tempColor = _cssColor('--corr-color-temperature', '#f97316');
 
-    var style = getComputedStyle(document.documentElement);
-    var textColor = style.getPropertyValue('--muted').trim() || '#888';
-    var gridColor = style.getPropertyValue('--input-border').trim() || '#333';
-    var goodColor = style.getPropertyValue('--good').trim() || '#4caf50';
-    var warnColor = style.getPropertyValue('--warn').trim() || '#ff9800';
-    var critColor = style.getPropertyValue('--crit').trim() || '#f44336';
-    var accentColor = style.getPropertyValue('--accent').trim() || '#2196f3';
+    var textColor = _cssColor('--muted', '#888');
+    var gridColor = _cssColor('--input-border', '#333');
+    var goodColor = _cssColor('--good', '#4caf50');
+    var warnColor = _cssColor('--warn', '#ff9800');
+    var critColor = _cssColor('--crit', '#f44336');
+    var accentColor = _cssColor('--accent', '#2196f3');
 
     // Store chart state for tooltip lookups
     var sortedSpeedtest = speedtest.slice().sort(function(a, b) {
@@ -210,7 +210,7 @@ function renderCorrelationChart(data) {
         modem: modem, speedtest: sortedSpeedtest, events: events, data: data,
         weather: weather, segment: segment,
         xScale: xScale, ySnr: ySnr, yTx: yTx, yDsPower: yDsPower, yDl: yDl, yTemp: yTemp, ySegment: ySegment,
-        colors: { snr: snrColor, txPower: txColor, dsPower: dsPowerColor, download: goodColor, upload: uploadColor, event: warnColor, errors: errorColor, temperature: tempColor, segmentDs: segDsColor, segmentUs: segUsColor, text: textColor, grid: gridColor },
+        colors: { snr: snrColor, txPower: txColor, dsPower: dsPowerColor, download: downloadColor, upload: uploadColor, event: warnColor, errors: errorColor, temperature: tempColor, segmentDs: segDsColor, segmentUs: segUsColor, text: textColor, grid: gridColor },
         dpr: dpr
     };
 
@@ -552,7 +552,7 @@ function renderCorrelationChart(data) {
         }
     }
     if (speedtest.length > 0) {
-        legendItems.push({ metric: 'download', color: goodColor, label: '&#9644; ' + (T.correlation_download || 'Download (Mbps)') });
+        legendItems.push({ metric: 'download', color: downloadColor, label: '&#9644; ' + (T.correlation_download || 'Download (Mbps)') });
         legendItems.push({ metric: 'upload', color: uploadColor, label: '&#9644; ' + (T.correlation_upload || 'Upload (Mbps)') });
     }
     if (events.length > 0) {
@@ -578,7 +578,7 @@ function renderCorrelationChart(data) {
             var filterCount = 0, totalTypes = 0;
             for (var et in item.eventTypes) { totalTypes++; if (_corrEventFilter[et]) filterCount++; }
             var filterBadge = filterCount < totalTypes ? ' <span style="font-size:0.7em;opacity:0.7;">(' + filterCount + '/' + totalTypes + ')</span>' : '';
-            return '<span data-metric="events" tabindex="0" role="button" class="' + cls + '" title="' + (T.correlation_toggle_hint || 'Click to toggle') + '" style="color:' + item.color + '; position:relative;">' + item.label + filterBadge +
+            return '<span data-metric="events" tabindex="0" role="button" class="' + cls + ' corr-legend-events" title="' + (T.correlation_toggle_hint || 'Click to toggle') + '" style="color:' + item.color + ';">' + item.label + filterBadge +
                 ' <span class="corr-event-filter-btn" title="' + (T.correlation_event_filter || 'Event Filter') + '">&#9881;</span></span>';
         }
         return '<span data-metric="' + item.metric + '" tabindex="0" role="button" class="' + cls + '" title="' + (T.correlation_toggle_hint || 'Click to toggle') + '" style="color:' + item.color + ';">' + item.label + '</span>';
