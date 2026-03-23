@@ -214,6 +214,9 @@
         <a class="nav-item" href="/settings">
             <i data-lucide="settings"></i> {{ t.settings }}
         </a>
+        <a class="nav-item" href="/settings#support">
+            <i data-lucide="heart-handshake"></i> {{ t.get('support_nav', 'Support') }}
+        </a>
         {% if auth_enabled %}
         <a class="nav-item" href="/logout">
             <i data-lucide="log-out"></i> {{ t.logout }}

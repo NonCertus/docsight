@@ -622,6 +622,7 @@
     "notify_test_title": "Notification de test",
     "notify_test_desc": "Envoyer un événement test pour vérifier votre configuration webhook",
     "notify_test_send": "Envoyer le test",
+    "support_nav": "Soutenir",
     "support_title": "Soutenir DOCSight",
     "support_subtitle": "Aidez à maintenir ce projet en vie",
     "support_description": "DOCSight est né d'un combat personnel contre un internet câblé instable et des réponses de support qui ne correspondaient jamais à la réalité. Je voulais un outil qui transforme la frustration en preuves techniques claires. Si vous souhaitez soutenir cette mission, merci. Cela aide vraiment.",
