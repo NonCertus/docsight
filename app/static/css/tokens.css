@@ -32,7 +32,7 @@
   --text-primary: #e8edff;
   --text-secondary: #9ba3c8;
   --text-muted: #7880a6;
-  --text-on-accent: #f0edff;
+  --text-on-accent: #fff;
 
   /* Glass */
   --glass-bg: rgba(17, 22, 40, 0.65);
