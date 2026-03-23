@@ -145,7 +145,7 @@
 .export-mode-selector {
     display: flex;
     gap: var(--space-sm);
-    padding: 0 var(--space-lg);
+    padding: 0;
     margin-bottom: var(--space-sm);
 }
 .export-mode-selector label {
@@ -187,7 +187,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--space-xs);
     padding: var(--space-sm) var(--space-lg);
     min-height: 44px;
     border: none;
@@ -202,6 +202,7 @@
 .btn-accent {
     background: var(--grad-primary);
     color: #fff;
+    /* Shadow color manually synced with --amethyst (#7c3aed = rgb(124,58,237)) */
     box-shadow: 0 2px 8px rgba(124,58,237,0.3);
 }
 .btn-accent:hover {
