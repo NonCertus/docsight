@@ -224,6 +224,37 @@ class TestSafeHtmlXSS:
         result = str(filter_fn('<a href=javascript:alert(1)>click</a>'))
         assert "javascript:" not in result.lower()
 
+    def test_html_entity_javascript_bypass(self, filter_fn):
+        """Tab entity inside javascript: scheme must be caught."""
+        result = str(filter_fn('<a href="java&#9;script:alert(1)">click</a>'))
+        assert 'href="#"' in result
+
+    def test_newline_javascript_bypass(self, filter_fn):
+        """Newline inside javascript: scheme must be caught."""
+        result = str(filter_fn('<a href="java\nscript:alert(1)">click</a>'))
+        assert 'href="#"' in result
+
+    def test_slash_separated_onclick(self, filter_fn):
+        """Slash-separated event handler must be stripped."""
+        result = str(filter_fn('<a/onclick=alert(1) href="#">click</a>'))
+        assert "onclick" not in result.lower()
+
+    def test_data_uri_blocked(self, filter_fn):
+        result = str(filter_fn('<a href="data:text/html,<script>alert(1)</script>">x</a>'))
+        assert 'href="#"' in result
+
+    def test_vbscript_blocked(self, filter_fn):
+        result = str(filter_fn('<a href="vbscript:msgbox(1)">x</a>'))
+        assert 'href="#"' in result
+
+    def test_relative_path_allowed(self, filter_fn):
+        result = str(filter_fn('<a href="/docs/help">help</a>'))
+        assert 'href="/docs/help"' in result
+
+    def test_hash_link_allowed(self, filter_fn):
+        result = str(filter_fn('<a href="#section">jump</a>'))
+        assert 'href="#section"' in result
+
     def test_strips_onmouseover(self, filter_fn):
         result = str(filter_fn('<b onmouseover="alert(1)">bold</b>'))
         assert "onmouseover" not in result.lower()
