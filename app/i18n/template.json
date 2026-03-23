@@ -319,6 +319,8 @@
     "signal_ds_channels": "",
     "signal_us_channels": "",
     "signal_snapshot_time": "",
+    "channel_onboarding_title": "",
+    "channel_onboarding_desc": "",
     "channel_timeline": "",
     "select_channel": "",
     "downstream_channels": "",

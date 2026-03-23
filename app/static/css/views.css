@@ -1232,6 +1232,88 @@
 .btn-ghost:hover { color: var(--text); }
 
 
+/* ── Channel View Controls ── */
+.ch-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: var(--space-lg, 20px);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Channel info bar */
+.ch-info-bar {
+    display: flex;
+    gap: var(--space-md, 16px);
+    padding: var(--space-sm, 8px) var(--space-md, 16px);
+    margin-bottom: var(--space-md, 16px);
+    background: var(--tint-subtle, rgba(255,255,255,0.02));
+    border: 1px solid var(--glass-border, var(--card-border));
+    border-radius: var(--radius-sm, 8px);
+    font-size: 0.82em;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.ch-info-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+}
+.ch-info-item strong {
+    color: var(--text-primary);
+}
+.ch-info-sep {
+    width: 1px;
+    height: 16px;
+    background: var(--glass-border);
+    flex-shrink: 0;
+}
+.ch-info-health {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+}
+.ch-info-health.good { color: var(--good); }
+.ch-info-health.tolerated { color: var(--tolerated, var(--warn)); }
+.ch-info-health.warn { color: var(--warn); }
+.ch-info-health.crit { color: var(--crit); }
+
+/* Channel onboarding (empty state) */
+.ch-onboarding {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md, 16px);
+    padding: var(--space-xl, 32px);
+    background: var(--tint-subtle, rgba(255,255,255,0.02));
+    border: 1px dashed var(--glass-border);
+    border-radius: var(--radius-md, 12px);
+    color: var(--text-secondary);
+}
+.ch-onboarding > i, .ch-onboarding > svg {
+    width: 32px; height: 32px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.ch-onboarding-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.ch-onboarding-text strong {
+    color: var(--text-primary);
+    font-size: 0.95em;
+}
+.ch-onboarding-text span {
+    font-size: 0.85em;
+}
+
+/* Full-width chart card (modulation) */
+.ch-full-width {
+    grid-column: 1 / -1;
+}
+
 /* ── Channel Compare ── */
 .compare-controls {
     display: flex;
