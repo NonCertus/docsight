@@ -123,6 +123,9 @@
 .cm-table-wrap {
     overflow-x: auto;
 }
+.text-right {
+    text-align: right;
+}
 
 /* ── Traceroute Section ── */
 .cm-traceroute-targets {
