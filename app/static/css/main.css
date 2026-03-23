@@ -159,7 +159,7 @@
 .nav-badge {
   margin-left: auto;
   background: var(--crit);
-  color: var(--text-on-accent);
+  color: #fff;
   font-size: 0.65rem;
   font-weight: 700;
   padding: 2px 7px;
@@ -179,16 +179,12 @@
 .nav-group-toggle:hover { color: var(--text-secondary); }
 .nav-toggle-icon { width: 14px; height: 14px; transition: transform 0.2s ease; }
 .nav-section-collapsible .nav-section-items {
-  display: grid;
-  grid-template-rows: 1fr;
   overflow: hidden;
-  transition: grid-template-rows 0.3s var(--ease-out-expo);
-}
-.nav-section-collapsible .nav-section-items > * {
-  overflow: hidden;
+  max-height: 500px;
+  transition: max-height 0.3s var(--ease-out-expo);
 }
 .nav-section-collapsible.collapsed .nav-section-items {
-  grid-template-rows: 0fr;
+  max-height: 0;
 }
 .nav-section-collapsible.collapsed .nav-toggle-icon {
   transform: rotate(-90deg);

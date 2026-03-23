@@ -64,17 +64,17 @@
   // Expose for dashboard refresh cycle
   window.initGlossaryHints = initHints;
 
-  // Toggle on Enter/Space for keyboard users (with stopPropagation to prevent parent handlers)
+  // Toggle on Enter/Space for keyboard users (capture phase to intercept before inline handlers)
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') {
       var hint = e.target.closest('.glossary-hint');
       if (hint) {
         e.preventDefault();
-        e.stopPropagation();
+        e.stopImmediatePropagation();
         hint.click();
       }
     }
-  });
+  }, true);
 
   document.addEventListener('click', function (e) {
     // Ignore clicks on the overlay itself

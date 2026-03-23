@@ -730,7 +730,7 @@
     box-shadow: inset 4px 0 0 var(--accent-purple, #a855f7);
 }
 #correlation-table tbody tr.corr-highlight td {
-    color: var(--text-on-accent) !important;
+    color: var(--text-primary) !important;
 }
 #correlation-table tbody td {
     padding: 12px 16px;
