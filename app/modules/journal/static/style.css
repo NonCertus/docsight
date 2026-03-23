@@ -1147,6 +1147,9 @@ mark.search-highlight {
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+    .journal-hide-mobile {
+        display: none;
+    }
     .journal-header-actions {
         width: 100%;
         justify-content: stretch;
