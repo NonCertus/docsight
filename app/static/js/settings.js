@@ -930,15 +930,7 @@ function _createBrowseItem(label, targetPath, iconName, isMuted) {
 }
 
 /* ── Username Field Toggle + Modem Defaults (data-driven) ── */
-var KNOWN_DEFAULT_URLS = (function() {
-    var urls = {};
-    if (typeof DRIVER_HINTS !== 'undefined') {
-        for (var k in DRIVER_HINTS) {
-            if (DRIVER_HINTS[k].default_url) urls[DRIVER_HINTS[k].default_url] = true;
-        }
-    }
-    return urls;
-})();
+var _previousDriverDefault = '';
 
 function toggleUsernameField() {
     var modemType = document.getElementById('modem_type');
@@ -957,10 +949,11 @@ function toggleUsernameField() {
     var testBtnParent = testBtn ? testBtn.parentElement : null;
     var testResult = document.getElementById('modem-test');
 
-    // URL default: apply if field is empty or still shows any known modem default
-    if (hints.default_url && urlField && (!urlField.value || KNOWN_DEFAULT_URLS[urlField.value])) {
+    // URL default: apply only if field is empty or shows the previous driver's default
+    if (hints.default_url && urlField && (!urlField.value || urlField.value === _previousDriverDefault)) {
         urlField.value = hints.default_url;
     }
+    _previousDriverDefault = hints.default_url || '';
 
     if (hints.credentials_required === false) {
         credFields.forEach(function(el) { if (el) el.style.display = 'none'; });
