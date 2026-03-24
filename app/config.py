@@ -32,6 +32,7 @@ DEFAULTS = {
     "history_days": 0,
     "snapshot_time": "06:00",
     "theme": "dark",
+    "font_family": "outfit",
     "language": "en",
     "isp_name": "",
     "admin_password": "",

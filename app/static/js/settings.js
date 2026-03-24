@@ -204,6 +204,22 @@ function toggleThemeFromAppearance(checked) {
     updatePaletteDots(theme);
 }
 
+function applyFontToggle(useSystem) {
+    var el = document.getElementById('font-override');
+    var hidden = document.getElementById('font_family');
+    if (hidden) hidden.value = useSystem ? 'system' : 'outfit';
+    if (useSystem) {
+        if (!el) {
+            el = document.createElement('style');
+            el.id = 'font-override';
+            el.textContent = ':root { --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }';
+            document.head.appendChild(el);
+        }
+    } else if (el) {
+        el.remove();
+    }
+}
+
 function updatePaletteDots(mode) {
     var keys = ['--bg', '--surface', '--accent', '--good', '--crit'];
     document.querySelectorAll('.theme-card').forEach(function(card) {
