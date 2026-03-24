@@ -36,6 +36,9 @@
     }
     </style>
     {% endif %}
+    {% if config.font_family == 'system' %}
+    <style id="font-override">:root { --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }</style>
+    {% endif %}
     <script src="/static/vendor/lucide.min.js"></script>
 </head>
 <body>

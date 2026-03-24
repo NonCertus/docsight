@@ -26,6 +26,35 @@
         </div>
     </div>
 
+    <!-- Font -->
+    <div class="settings-card glass">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-icon purple">
+                    <i data-lucide="type"></i>
+                </div>
+                <div>
+                    <div class="card-title">{{ t.font_family }}</div>
+                    <div class="card-subtitle">{{ t.font_family_desc }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="toggle-row">
+            <div class="toggle-info">
+                <span class="toggle-title">{{ t.use_system_font }}</span>
+                <span class="toggle-desc">{{ t.use_system_font_hint }}</span>
+            </div>
+            <label class="toggle">
+                <input type="checkbox" id="font-toggle"
+                       {% if config.font_family == 'system' %}checked{% endif %}
+                       onchange="applyFontToggle(this.checked)">
+                <span class="toggle-slider"></span>
+            </label>
+            <input type="hidden" id="font_family" name="font_family"
+                   value="{{ config.font_family or 'outfit' }}">
+        </div>
+    </div>
+
     <!-- Theme Gallery -->
     <div class="settings-card glass">
         <div class="card-header">
