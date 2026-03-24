@@ -254,13 +254,13 @@ class SagemcomDriver(ModemDriver):
         resp = r.json()
         error = resp.get("reply", {}).get("error", {})
         if error.get("description") not in ("XMO_REQUEST_NO_ERR", None):
-            # Log action-level errors for debugging
             for action in resp.get("reply", {}).get("actions", []):
                 act_err = action.get("error", {})
                 if act_err.get("description") != "XMO_NO_ERR":
                     log.debug("Sagemcom action error: %s", act_err)
-            if error.get("code") == 16777236:
-                raise RuntimeError(f"Sagemcom action error: {error.get('description')}")
+            raise RuntimeError(
+                f"Sagemcom XMO error: {error.get('description')} (code={error.get('code')})"
+            )
         return resp
 
     @staticmethod
