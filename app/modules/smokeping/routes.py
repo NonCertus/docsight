@@ -67,7 +67,13 @@ def api_smokeping_graph(target, timespan):
         log.warning("Smokeping proxy failed for %s/%s: %s", target, timespan, e)
         return jsonify({"error": "Failed to fetch graph"}), 502
 
-    resp = make_response(r.content)
+    content = r.content
+    if not content or content[:4] != b"\x89PNG":
+        return jsonify({"error": "Invalid image response from Smokeping"}), 502
+
+    resp = make_response(content)
     resp.headers["Content-Type"] = "image/png"
+    resp.headers["Content-Security-Policy"] = "default-src 'none'"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Cache-Control"] = "public, max-age=60"
     return resp

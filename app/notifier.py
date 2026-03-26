@@ -74,7 +74,7 @@ class NotificationDispatcher:
             if token:
                 headers["Authorization"] = f"Bearer {token}"
             self._channels.append(WebhookChannel(url, headers))
-            log.info("Notification channel: webhook -> %s", url)
+            log.info("Notification channel: webhook configured")
 
     def dispatch(self, events: list):
         """Send qualifying events to all configured channels."""

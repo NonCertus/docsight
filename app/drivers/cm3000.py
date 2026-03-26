@@ -33,7 +33,8 @@ _STATUS_PATH = "/DocsisStatus.htm"
 # Uses .*? (lazy) instead of [^}]*? to support nested braces in
 # function bodies (e.g. if-blocks in some firmware versions).
 _RE_FUNCTION_START = re.compile(r"function\s+(?P<name>\w+)\s*\(\)\s*\{", re.DOTALL)
-_RE_STRING_LITERAL = re.compile(r"""(['"])((?:\\.|(?!\1).)*)\1""", re.DOTALL)
+_RE_SINGLE_QUOTED = re.compile(r"'([^'\\]*(?:\\.[^'\\]*)*)'", re.DOTALL)
+_RE_DOUBLE_QUOTED = re.compile(r'"([^"\\]*(?:\\.[^"\\]*)*)"', re.DOTALL)
 _LOGIN_MARKERS = (
     "login.htm",
     "login.html",
@@ -495,11 +496,13 @@ class CM3000Driver(ModemDriver):
             assign_expr = assign_expr[:return_idx]
         assign_expr = assign_expr.strip().rstrip(";").strip()
 
-        literals = _RE_STRING_LITERAL.findall(assign_expr)
+        singles = _RE_SINGLE_QUOTED.findall(assign_expr)
+        doubles = _RE_DOUBLE_QUOTED.findall(assign_expr)
+        literals = singles + doubles
         if not literals:
             return None
 
-        return "".join(bytes(value, "utf-8").decode("unicode_escape") for _, value in literals)
+        return "".join(bytes(value, "utf-8").decode("unicode_escape") for value in literals)
 
     @staticmethod
     def _extract_function_body(html: str, function_name: str) -> str | None:
