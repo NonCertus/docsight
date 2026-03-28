@@ -50,7 +50,7 @@ class TestGlossaryVisualDesktop:
         )
 
     def test_screenshot_modulation_popovers(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         demo_page.wait_for_timeout(2000)
         hint = demo_page.locator('#view-modulation .glossary-hint').first
         hint.click()

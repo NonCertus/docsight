@@ -8,6 +8,9 @@ import time
 import pytest
 import requests
 
+_MP_CTX = multiprocessing.get_context("spawn")
+_WAITRESS_KWARGS = {"threads": 2, "_quiet": True, "asyncore_use_poll": True}
+
 
 def _find_free_port():
     """Return an available TCP port on localhost."""
@@ -101,7 +104,7 @@ def _start_server(data_dir, port, admin_password=None):
 
     from waitress import serve
 
-    serve(web.app, host="127.0.0.1", port=port, threads=2, _quiet=True)
+    serve(web.app, host="127.0.0.1", port=port, **_WAITRESS_KWARGS)
 
 
 def _wait_for_server(port, timeout=60):
@@ -135,7 +138,7 @@ def _auth_data_dir(tmp_path_factory):
 def live_server(_demo_data_dir):
     """Start a DOCSight demo server (no auth) and return its base URL."""
     port = _find_free_port()
-    proc = multiprocessing.Process(
+    proc = _MP_CTX.Process(
         target=_start_server,
         args=(_demo_data_dir, port),
         daemon=True,
@@ -153,7 +156,7 @@ def live_server(_demo_data_dir):
 def auth_server(_auth_data_dir):
     """Start a DOCSight server with admin password and return its base URL."""
     port = _find_free_port()
-    proc = multiprocessing.Process(
+    proc = _MP_CTX.Process(
         target=_start_server,
         args=(_auth_data_dir, port, "e2e-test-password"),
         daemon=True,
@@ -211,7 +214,7 @@ def _start_unconfigured_server(data_dir, port):
 
     from waitress import serve
 
-    serve(web.app, host="127.0.0.1", port=port, threads=2, _quiet=True)
+    serve(web.app, host="127.0.0.1", port=port, **_WAITRESS_KWARGS)
 
 
 @pytest.fixture(scope="session")
@@ -224,7 +227,7 @@ def _setup_data_dir(tmp_path_factory):
 def setup_server(_setup_data_dir):
     """Start an unconfigured DOCSight server and return its base URL."""
     port = _find_free_port()
-    proc = multiprocessing.Process(
+    proc = _MP_CTX.Process(
         target=_start_unconfigured_server,
         args=(_setup_data_dir, port),
         daemon=True,
@@ -345,7 +348,7 @@ def _start_fritzbox_server(data_dir, port):
                             round(ds_own, 2), round(us_own, 2))
 
     from waitress import serve
-    serve(web.app, host="127.0.0.1", port=port, threads=2, _quiet=True)
+    serve(web.app, host="127.0.0.1", port=port, **_WAITRESS_KWARGS)
 
 
 @pytest.fixture(scope="session")
@@ -358,7 +361,7 @@ def _fritzbox_data_dir(tmp_path_factory):
 def fritzbox_server(_fritzbox_data_dir):
     """Start a DOCSight server with modem_type=fritzbox and segment data."""
     port = _find_free_port()
-    proc = multiprocessing.Process(
+    proc = _MP_CTX.Process(
         target=_start_fritzbox_server,
         args=(_fritzbox_data_dir, port),
         daemon=True,

@@ -20,7 +20,7 @@ class TestDashboardLoad:
         assert title.text_content().strip() == "DOCSight"
 
     def test_live_view_active_by_default(self, demo_page):
-        live_nav = demo_page.locator('a.nav-item[data-view="live"]')
+        live_nav = demo_page.locator('.nav-item[data-view="live"]')
         assert "active" in live_nav.get_attribute("class")
 
 
@@ -28,23 +28,23 @@ class TestNavigation:
     """Sidebar nav switching."""
 
     def test_switch_to_events(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="events"]').click()
+        demo_page.locator('.nav-item[data-view="events"]').click()
         events_section = demo_page.locator("#view-events")
         assert events_section.is_visible()
 
     def test_switch_to_trends(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="trends"]').click()
+        demo_page.locator('.nav-item[data-view="trends"]').click()
         trends_section = demo_page.locator("#view-trends")
         assert trends_section.is_visible()
 
     def test_switch_to_channels(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="channels"]').click()
+        demo_page.locator('.nav-item[data-view="channels"]').click()
         channels_section = demo_page.locator("#view-channels")
         assert channels_section.is_visible()
 
     def test_switch_back_to_live(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="events"]').click()
-        demo_page.locator('a.nav-item[data-view="live"]').click()
+        demo_page.locator('.nav-item[data-view="events"]').click()
+        demo_page.locator('.nav-item[data-view="live"]').click()
         live_section = demo_page.locator("#view-dashboard")
         assert live_section.is_visible()
 

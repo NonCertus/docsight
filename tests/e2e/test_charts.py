@@ -13,13 +13,13 @@ import pytest
 
 def navigate_to_trends(page):
     """Switch to Trends view and wait for charts to load."""
-    page.locator('a.nav-item[data-view="trends"]').click()
+    page.locator('.nav-item[data-view="trends"]').click()
     page.wait_for_timeout(1500)
 
 
 def navigate_to_channels(page):
     """Switch to Channels view."""
-    page.locator('a.nav-item[data-view="channels"]').click()
+    page.locator('.nav-item[data-view="channels"]').click()
     page.wait_for_timeout(500)
 
 
@@ -473,7 +473,7 @@ class TestChartCleanup:
         wait_for_uplot(demo_page, "chart-ds-power")
 
         # Switch to another view
-        demo_page.locator('a.nav-item[data-view="live"]').click()
+        demo_page.locator('.nav-item[data-view="live"]').click()
         demo_page.wait_for_timeout(500)
 
         # Switch back — charts should re-render without stacking

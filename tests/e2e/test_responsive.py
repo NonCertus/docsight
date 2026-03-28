@@ -34,7 +34,8 @@ class TestMobileLayout:
         mobile_page.wait_for_timeout(300)
         sidebar = mobile_page.locator("nav.sidebar")
         box = sidebar.bounding_box()
-        assert box is not None and box["x"] >= 0
+        # Allow tiny subpixel drift from browser layout math around x=0.
+        assert box is not None and box["x"] >= -0.5
 
     def test_primary_nav_items_in_sidebar(self, mobile_page):
         mobile_page.locator("#hamburger").click()

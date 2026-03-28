@@ -5,13 +5,13 @@ from playwright.sync_api import expect
 
 def navigate_to_comparison(page):
     """Open the comparison view and wait for the control bar."""
-    page.locator('a.nav-item[data-view="comparison"]').click()
+    page.locator('.nav-item[data-view="comparison"]').click()
     expect(page.locator("#comparison-controls")).to_be_visible()
 
 
 class TestComparisonView:
     def test_nav_item_visible(self, demo_page):
-        nav = demo_page.locator('a.nav-item[data-view="comparison"]')
+        nav = demo_page.locator('.nav-item[data-view="comparison"]')
         assert nav.count() == 1
 
     def test_run_comparison_shows_health_distribution(self, demo_page):

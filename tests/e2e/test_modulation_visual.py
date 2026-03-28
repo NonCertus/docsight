@@ -22,7 +22,7 @@ def ensure_screenshot_dir():
 @pytest.fixture()
 def modulation_page(demo_page):
     """Navigate to modulation tab and wait for data to load."""
-    demo_page.locator('a.nav-item[data-view="modulation"]').click()
+    demo_page.locator('.nav-item[data-view="modulation"]').click()
     demo_page.wait_for_timeout(2000)  # Wait for API + Chart.js render
     return demo_page
 

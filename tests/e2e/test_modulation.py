@@ -10,32 +10,32 @@ class TestModulationNavigation:
     """Sidebar nav → module tab activation."""
 
     def test_sidebar_has_modulation_link(self, demo_page):
-        nav = demo_page.locator('a.nav-item[data-view="modulation"]')
+        nav = demo_page.locator('.nav-item[data-view="modulation"]')
         assert nav.count() > 0
 
     def test_sidebar_link_text(self, demo_page):
-        nav = demo_page.locator('a.nav-item[data-view="modulation"]')
+        nav = demo_page.locator('.nav-item[data-view="modulation"]')
         text = nav.text_content().strip()
         assert "Modulation" in text
 
     def test_click_opens_modulation_view(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         view = demo_page.locator("#view-modulation")
         expect(view).to_be_visible()
 
     def test_modulation_nav_marked_active(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
-        nav = demo_page.locator('a.nav-item[data-view="modulation"]')
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
+        nav = demo_page.locator('.nav-item[data-view="modulation"]')
         assert "active" in nav.get_attribute("class")
 
     def test_live_view_hidden_when_modulation_active(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         live = demo_page.locator("#view-dashboard")
         expect(live).not_to_be_visible()
 
     def test_switch_back_to_live(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
-        demo_page.locator('a.nav-item[data-view="live"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="live"]').click()
         live = demo_page.locator("#view-dashboard")
         expect(live).to_be_visible()
 
@@ -53,7 +53,7 @@ class TestModulationTabStructure:
 
     @pytest.fixture(autouse=True)
     def navigate_to_modulation(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         demo_page.wait_for_timeout(500)
         self.page = demo_page
 
@@ -102,7 +102,7 @@ class TestModulationControls:
 
     @pytest.fixture(autouse=True)
     def navigate_to_modulation(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         demo_page.wait_for_timeout(500)
         self.page = demo_page
 
@@ -211,7 +211,7 @@ class TestModulationKPIs:
 
     @pytest.fixture(autouse=True)
     def navigate_to_modulation(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         demo_page.wait_for_timeout(1500)
         self.page = demo_page
 
@@ -245,7 +245,7 @@ class TestProtocolGroups:
 
     @pytest.fixture(autouse=True)
     def navigate_to_modulation(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         demo_page.wait_for_timeout(1500)
         self.page = demo_page
 

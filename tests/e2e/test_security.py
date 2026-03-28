@@ -145,7 +145,7 @@ class TestXSSNoScriptExecution:
         """Speedtest view should load without JS errors."""
         errors = []
         demo_page.on("pageerror", lambda err: errors.append(str(err)))
-        demo_page.locator('a.nav-item[data-view="speedtest"]').click()
+        demo_page.locator('.nav-item[data-view="speedtest"]').click()
         demo_page.wait_for_timeout(2000)
         escape_errors = [e for e in errors if "escapeHtml" in e or "undefined" in e.lower()]
         assert len(escape_errors) == 0, f"JS errors on speedtest: {escape_errors}"
@@ -154,7 +154,7 @@ class TestXSSNoScriptExecution:
         """Channels view (including compare chips) should load without JS errors."""
         errors = []
         demo_page.on("pageerror", lambda err: errors.append(str(err)))
-        demo_page.locator('a.nav-item[data-view="channels"]').click()
+        demo_page.locator('.nav-item[data-view="channels"]').click()
         demo_page.wait_for_timeout(1500)
         escape_errors = [e for e in errors if "escapeHtml" in e or "undefined" in e.lower()]
         assert len(escape_errors) == 0, f"JS errors on channels: {escape_errors}"
@@ -163,7 +163,7 @@ class TestXSSNoScriptExecution:
         """Correlation view (event tooltips) should load without JS errors."""
         errors = []
         demo_page.on("pageerror", lambda err: errors.append(str(err)))
-        demo_page.locator('a.nav-item[data-view="correlation"]').click()
+        demo_page.locator('.nav-item[data-view="correlation"]').click()
         demo_page.wait_for_timeout(2000)
         escape_errors = [e for e in errors if "escapeHtml" in e or "undefined" in e.lower()]
         assert len(escape_errors) == 0, f"JS errors on correlation: {escape_errors}"
@@ -172,7 +172,7 @@ class TestXSSNoScriptExecution:
         """BNetzA view (provider, date columns) should load without JS errors."""
         errors = []
         demo_page.on("pageerror", lambda err: errors.append(str(err)))
-        demo_page.locator('a.nav-item[data-view="bnetz"]').click()
+        demo_page.locator('.nav-item[data-view="bnetz"]').click()
         demo_page.wait_for_timeout(2000)
         escape_errors = [e for e in errors if "escapeHtml" in e or "undefined" in e.lower()]
         assert len(escape_errors) == 0, f"JS errors on bnetz: {escape_errors}"
@@ -181,7 +181,7 @@ class TestXSSNoScriptExecution:
         """BQM view should load without JS errors."""
         errors = []
         demo_page.on("pageerror", lambda err: errors.append(str(err)))
-        demo_page.locator('a.nav-item[data-view="bqm"]').click()
+        demo_page.locator('.nav-item[data-view="bqm"]').click()
         demo_page.wait_for_timeout(2000)
         escape_errors = [e for e in errors if "escapeHtml" in e or "undefined" in e.lower()]
         assert len(escape_errors) == 0, f"JS errors on bqm: {escape_errors}"
@@ -192,14 +192,14 @@ class TestSpeedtestTableEscaping:
 
     def test_speedtest_table_renders(self, demo_page):
         """Speedtest table should render with data."""
-        demo_page.locator('a.nav-item[data-view="speedtest"]').click()
+        demo_page.locator('.nav-item[data-view="speedtest"]').click()
         demo_page.wait_for_timeout(2000)
         rows = demo_page.locator("#speedtest-tbody tr")
         assert rows.count() > 0, "Speedtest table should have rows"
 
     def test_speedtest_values_not_html(self, demo_page):
         """Ping/jitter cells should contain plain text, not raw HTML."""
-        demo_page.locator('a.nav-item[data-view="speedtest"]').click()
+        demo_page.locator('.nav-item[data-view="speedtest"]').click()
         demo_page.wait_for_timeout(2000)
         cells = demo_page.locator("#speedtest-tbody td")
         for i in range(min(cells.count(), 40)):
@@ -212,7 +212,7 @@ class TestCorrelationTooltipEscaping:
 
     def test_correlation_view_renders(self, demo_page):
         """Correlation view should render (raw canvas element)."""
-        demo_page.locator('a.nav-item[data-view="correlation"]').click()
+        demo_page.locator('.nav-item[data-view="correlation"]').click()
         demo_page.wait_for_timeout(3000)
         # The correlation chart IS a canvas element with id="correlation-chart"
         chart = demo_page.locator("canvas#correlation-chart")
@@ -227,7 +227,7 @@ class TestChannelCompareChipEscaping:
 
     def test_compare_add_channel(self, demo_page):
         """Adding a channel to compare should render an escaped chip."""
-        demo_page.locator('a.nav-item[data-view="channels"]').click()
+        demo_page.locator('.nav-item[data-view="channels"]').click()
         demo_page.wait_for_timeout(500)
 
         # Switch to compare mode
@@ -266,7 +266,7 @@ class TestBnetzTableEscaping:
 
     def test_bnetz_data_renders(self, demo_page):
         """BNetzA measurements should render (demo mode has sample data)."""
-        demo_page.locator('a.nav-item[data-view="bnetz"]').click()
+        demo_page.locator('.nav-item[data-view="bnetz"]').click()
         demo_page.wait_for_timeout(2000)
         tbody = demo_page.locator("#bnetz-tbody")
         if tbody.count() > 0:

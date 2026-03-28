@@ -93,13 +93,13 @@ class TestGlossaryModulation:
     """Verify glossary hints on modulation KPI cards."""
 
     def test_modulation_kpi_has_glossary_hints(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         demo_page.wait_for_timeout(2000)
         hints = demo_page.locator('#view-modulation .glossary-hint')
         assert hints.count() >= 3, f"Expected 3 modulation glossary hints, got {hints.count()}"
 
     def test_health_index_popover(self, demo_page):
-        demo_page.locator('a.nav-item[data-view="modulation"]').click()
+        demo_page.locator('.nav-item[data-view="modulation"]').click()
         demo_page.wait_for_timeout(2000)
         hint = demo_page.locator('#view-modulation .glossary-hint').first
         hint.click()
