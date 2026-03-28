@@ -7,6 +7,20 @@ var _tempOverlayVisible = true;
 var currentView = 'live';
 
 /* ── Shared Helpers ── */
+function fmtTemp(celsius) {
+    if (celsius == null) return '';
+    if (typeof TEMPERATURE_UNIT !== 'undefined' && TEMPERATURE_UNIT === 'fahrenheit') {
+        return (celsius * 9 / 5 + 32).toFixed(1) + ' °F';
+    }
+    return celsius.toFixed(1) + ' °C';
+}
+function fmtTempAxis(celsius) {
+    if (celsius == null) return '';
+    if (typeof TEMPERATURE_UNIT !== 'undefined' && TEMPERATURE_UNIT === 'fahrenheit') {
+        return Math.round(celsius * 9 / 5 + 32) + '°';
+    }
+    return celsius.toFixed(0) + '°';
+}
 function fmtK(v) {
     if (v == null) return '';
     var abs = Math.abs(v);
@@ -369,7 +383,7 @@ function renderChart(canvasId, labels, datasets, type, zones, opts) {
         tooltipLabelCallback = function(ctx) {
             var val = ctx.parsed.y;
             if (val == null) return '';
-            if (ctx.dataset.yAxisID === 'y-temp') return ctx.dataset.label + ': ' + val.toFixed(1) + ' °C';
+            if (ctx.dataset.yAxisID === 'y-temp') return ctx.dataset.label + ': ' + fmtTemp(val);
             return ctx.dataset.label + ': ' + val;
         };
     }
@@ -505,7 +519,7 @@ function renderChart(canvasId, labels, datasets, type, zones, opts) {
             font: '10px system-ui',
             size: 40,
             gap: 4,
-            values: function(u, vals) { return vals.map(function(v) { return v.toFixed(0) + '°'; }); }
+            values: function(u, vals) { return vals.map(function(v) { return fmtTempAxis(v); }); }
         });
     }
     if (opts && opts.axes) {
@@ -670,7 +684,7 @@ function openChartZoom(canvasId) {
             zoomTooltipCb = function(ctx) {
                 var val = ctx.parsed.y;
                 if (val == null) return '';
-                if (ctx.dataset.yAxisID === 'y-temp') return ctx.dataset.label + ': ' + val.toFixed(1) + ' °C';
+                if (ctx.dataset.yAxisID === 'y-temp') return ctx.dataset.label + ': ' + fmtTemp(val);
                 return ctx.dataset.label + ': ' + val;
             };
         }
@@ -755,7 +769,7 @@ function openChartZoom(canvasId) {
                 font: '11px system-ui',
                 size: 45,
                 gap: 4,
-                values: function(u, vals) { return vals.map(function(v) { return v.toFixed(0) + '°'; }); }
+                values: function(u, vals) { return vals.map(function(v) { return fmtTempAxis(v); }); }
             });
         }
 
