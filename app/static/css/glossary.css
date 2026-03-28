@@ -14,13 +14,18 @@
   border-radius: 4px;
 }
 
-/* Inside metric cards: position in top-left corner */
+/* Inside metric cards: position in top-left corner, reveal on hover */
 .metric-card .glossary-hint {
   position: absolute;
   top: 10px;
   left: 10px;
   margin: 0;
   z-index: 2;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.metric-card:hover .glossary-hint {
+  opacity: 1;
 }
 
 /* Inside modulation KPI strip: inline, no absolute positioning */
