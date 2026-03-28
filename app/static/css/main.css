@@ -829,13 +829,6 @@ body.is-offline .offline-banner { display: flex; }
 }
 .channels-section.glass::before { display: none; }
 
-/* ── Connection Monitor: span full grid width ── */
-@media (min-width: 640px) {
-  #connection-monitor-card { grid-column: 1 / -1; }
-}
-@media (min-width: 1440px) {
-  #connection-monitor-card { grid-column: auto; }
-}
 
 /* ══════════════════════════════════════════════════════════════════
    RESPONSIVE -- TABLET & DESKTOP
