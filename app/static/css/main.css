@@ -366,14 +366,11 @@ body.is-offline .offline-banner { display: flex; }
   font-size: 0.78rem;
   color: var(--text-secondary);
   white-space: nowrap;
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-pill);
-  transition: background 0.2s;
+  padding: 4px 2px;
+  transition: color 0.2s;
 }
 .hero-meta-item:hover {
-  background: var(--tint-emphasis);
+  color: var(--text-primary);
 }
 /* Light mode tints handled by token system */
 .hero-meta-item svg { width: 13px; height: 13px; opacity: 0.6; }
@@ -567,10 +564,10 @@ body.is-offline .offline-banner { display: flex; }
   gap: 12px;
 }
 .metric-spark {
-  width: 72px;
-  height: 28px;
+  width: 88px;
+  height: 32px;
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 @media (max-width: 360px) {
   .metric-spark { display: none; }
@@ -802,6 +799,38 @@ body.is-offline .offline-banner { display: flex; }
 }
 .table-scroll-wrapper.scrolled-end::after { opacity: 0; }
 
+/* ── Surface Hierarchy ──
+   Hero + health rings keep full glass treatment for visual prominence.
+   insights-panel keeps glass to signal urgent health issues.
+   Everything else uses quieter surfaces so data speaks louder. */
+
+.metric-card.glass {
+  background: var(--elevated);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--glass-border);
+}
+.metric-card.glass::before { display: none; }
+
+.insights-healthy.glass,
+.insights-tolerated.glass {
+  background: var(--tint-subtle);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--border-tint);
+  border-radius: var(--radius-sm);
+}
+.insights-healthy.glass::before,
+.insights-tolerated.glass::before { display: none; }
+
+.channels-section.glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--surface);
+}
+.channels-section.glass::before { display: none; }
+
+
 /* ══════════════════════════════════════════════════════════════════
    RESPONSIVE -- TABLET & DESKTOP
    ══════════════════════════════════════════════════════════════════ */
@@ -818,6 +847,7 @@ body.is-offline .offline-banner { display: flex; }
   .hero-chart-wrap { height: 120px; }
   .hero-card { padding: var(--space-lg); }
   .metric-card { padding: var(--space-lg); }
+  .metric-spark { width: 120px; height: 40px; }
   /* metric-value uses clamp() for fluid scaling */
   .health-ring-card { padding: var(--space-lg); gap: var(--space-lg); }
   .ring-wrap { width: 100px; height: 100px; }
@@ -849,7 +879,7 @@ body.is-offline .offline-banner { display: flex; }
   .hero-icon-wrap { width: 48px; height: 48px; }
   .hero-icon-wrap svg { width: 24px; height: 24px; }
   /* hero-title uses clamp() for fluid scaling */
-  .metrics-grid { gap: var(--space-md); margin-bottom: var(--space-xl); }
+  .metrics-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
   .health-overview { gap: var(--space-md); margin-bottom: var(--space-2xl); }
   .insights-panel { margin-bottom: var(--space-xl); }
   .insights-healthy, .insights-tolerated { margin-bottom: var(--space-xl); }

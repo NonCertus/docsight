@@ -204,7 +204,7 @@ body {
 .skel-label { height: 11px; width: 65px; }
 .skel-icon { width: 32px; height: 32px; border-radius: var(--radius-sm); }
 .skel-value { height: 30px; width: 90px; }
-.skel-spark { width: 72px; height: 28px; }
+.skel-spark { width: 88px; height: 32px; }
 .skel-badge { height: 20px; width: 55px; border-radius: var(--radius-pill); }
 .skel-range { height: 12px; width: 75px; }
 .skel-chart { height: 200px; width: 100%; border-radius: var(--radius-lg); }
