@@ -804,19 +804,20 @@ body.is-offline .offline-banner { display: flex; }
    Everything else uses quieter surfaces so data speaks louder. */
 
 .metric-card.glass {
-  background: var(--surface);
+  background: var(--elevated);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border-color: var(--border-subtle);
+  border-color: var(--glass-border);
 }
 .metric-card.glass::before { display: none; }
 
 .insights-healthy.glass,
 .insights-tolerated.glass {
-  background: transparent;
+  background: var(--tint-subtle);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border-color: transparent;
+  border-color: var(--border-tint);
+  border-radius: var(--radius-sm);
 }
 .insights-healthy.glass::before,
 .insights-tolerated.glass::before { display: none; }
