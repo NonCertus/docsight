@@ -885,7 +885,7 @@ body.is-offline .offline-banner { display: flex; }
   .hero-icon-wrap { width: 48px; height: 48px; }
   .hero-icon-wrap svg { width: 24px; height: 24px; }
   /* hero-title uses clamp() for fluid scaling */
-  .metrics-grid { gap: var(--space-md); margin-bottom: var(--space-xl); }
+  .metrics-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
   .health-overview { gap: var(--space-md); margin-bottom: var(--space-2xl); }
   .insights-panel { margin-bottom: var(--space-xl); }
   .insights-healthy, .insights-tolerated { margin-bottom: var(--space-xl); }
