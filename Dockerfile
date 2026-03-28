@@ -1,5 +1,5 @@
 # --- builder stage: compile native dependencies ---
-FROM python:3.12-slim AS builder
+FROM python:3.13-slim@sha256:739e7213785e88c0f702dcdc12c0973afcbd606dbf021a589cab77d6b00b579d AS builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+RUN pip install --no-cache-dir --require-hashes --prefix=/install -r requirements.txt
 COPY tools/icmp_probe_helper.c /build/icmp_probe_helper.c
 COPY tools/traceroute_helper.c /build/traceroute_helper.c
 RUN mkdir -p /build/out && \
@@ -17,7 +17,7 @@ RUN mkdir -p /build/out && \
     gcc -O2 -Wall -o /build/out/docsight-traceroute-helper /build/traceroute_helper.c
 
 # --- runtime stage: slim final image ---
-FROM python:3.12-slim
+FROM python:3.13-slim@sha256:739e7213785e88c0f702dcdc12c0973afcbd606dbf021a589cab77d6b00b579d
 ARG VERSION=dev
 WORKDIR /app
 RUN echo "${VERSION}" > /app/VERSION

@@ -41,7 +41,7 @@ def _parse_qam_order(modulation_str):
     mod = modulation_str.upper().replace("-", "").strip()
     if mod in ("QPSK",):
         return 4
-    m = re.match(r"(\d+)\s*QAM", mod)
+    m = re.match(r"(\d+)\s{0,5}QAM", mod)
     if m:
         return int(m.group(1))
     return None
