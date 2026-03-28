@@ -7,18 +7,16 @@ var _tempOverlayVisible = true;
 var currentView = 'live';
 
 /* ── Shared Helpers ── */
+// TEMPERATURE_UNIT is set by index.html; default to celsius if not present
+if (typeof TEMPERATURE_UNIT === 'undefined') { var TEMPERATURE_UNIT = 'celsius'; }
 function fmtTemp(celsius) {
     if (celsius == null) return '';
-    if (typeof TEMPERATURE_UNIT !== 'undefined' && TEMPERATURE_UNIT === 'fahrenheit') {
-        return (celsius * 9 / 5 + 32).toFixed(1) + ' °F';
-    }
+    if (TEMPERATURE_UNIT === 'fahrenheit') return (celsius * 9 / 5 + 32).toFixed(1) + ' °F';
     return celsius.toFixed(1) + ' °C';
 }
 function fmtTempAxis(celsius) {
     if (celsius == null) return '';
-    if (typeof TEMPERATURE_UNIT !== 'undefined' && TEMPERATURE_UNIT === 'fahrenheit') {
-        return Math.round(celsius * 9 / 5 + 32) + '°';
-    }
+    if (TEMPERATURE_UNIT === 'fahrenheit') return Math.round(celsius * 9 / 5 + 32) + '°';
     return celsius.toFixed(0) + '°';
 }
 function fmtK(v) {

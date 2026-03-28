@@ -167,10 +167,12 @@ function renderCorrelationChart(data) {
 
     // Temperature axis (separate scale, dashed line)
     var weather = _corrWeatherData || [];
-    var tempValues = weather.map(function(d) { return d.temperature; }).filter(function(v) { return v != null; });
-    var tempMin = tempValues.length ? Math.floor(Math.min.apply(null, tempValues) - 2) : -10;
-    var tempMax = tempValues.length ? Math.ceil(Math.max.apply(null, tempValues) + 2) : 40;
-    function yTemp(v) { return pad.top + plotH - (v - tempMin) / (tempMax - tempMin) * plotH; }
+    var _isFahrenheit = typeof TEMPERATURE_UNIT !== 'undefined' && TEMPERATURE_UNIT === 'fahrenheit';
+    function _toDisplayTemp(c) { return _isFahrenheit ? c * 9 / 5 + 32 : c; }
+    var tempValues = weather.map(function(d) { return _toDisplayTemp(d.temperature); }).filter(function(v) { return v != null && !isNaN(v); });
+    var tempMin = tempValues.length ? Math.floor(Math.min.apply(null, tempValues) - 2) : (_isFahrenheit ? 14 : -10);
+    var tempMax = tempValues.length ? Math.ceil(Math.max.apply(null, tempValues) + 2) : (_isFahrenheit ? 104 : 40);
+    function yTemp(v) { var dv = _toDisplayTemp(v); return pad.top + plotH - (dv - tempMin) / (tempMax - tempMin) * plotH; }
 
     // Segment utilization axis (0-100% scale)
     var segment = _corrSegmentData || [];
