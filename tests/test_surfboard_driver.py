@@ -5,7 +5,12 @@ import hmac
 
 import pytest
 from unittest.mock import patch, MagicMock, PropertyMock
-from app.drivers.surfboard import SurfboardDriver, _HNAP_PRELOGIN_KEY
+from app.drivers.surfboard import (
+    SurfboardDriver,
+    _HNAP_PRELOGIN_KEY,
+    _LegacyTLSAdapter,
+    _HAS_LEGACY_TLS,
+)
 
 
 # -- Embedded channel strings from real S34 HAR capture --
@@ -1076,3 +1081,118 @@ class TestHttp500Resilience:
             driver.get_docsis_data()
 
         assert driver._logged_in is True
+
+
+# -- Legacy TLS fallback --
+
+@pytest.mark.skipif(not _HAS_LEGACY_TLS, reason="requires ssl.OP_LEGACY_SERVER_CONNECT")
+class TestLegacyTLSFallback:
+    def test_ssl_error_triggers_legacy_tls_retry(self):
+        """SSLError on normal HTTPS triggers legacy TLS retry before HTTP fallback."""
+        import requests as req
+
+        driver = SurfboardDriver("https://192.168.100.1", "admin", "password")
+        urls_seen = []
+
+        def mock_do_login():
+            urls_seen.append(driver._url)
+            if len(urls_seen) == 1:
+                raise req.exceptions.SSLError("SSLV3_ALERT_HANDSHAKE_FAILURE")
+
+        with patch.object(driver, "_do_login", side_effect=mock_do_login), \
+             patch("app.drivers.surfboard.time"):
+            driver.login()
+
+        assert len(urls_seen) == 2
+        assert all(u.startswith("https://") for u in urls_seen)
+        assert driver._logged_in is True
+        assert driver._legacy_tls_needed is True
+
+    def test_ssl_error_legacy_tls_then_http_fallback(self):
+        """SSLError on both normal and legacy HTTPS falls back to HTTP."""
+        import requests as req
+
+        driver = SurfboardDriver("https://192.168.100.1", "admin", "password")
+        urls_seen = []
+
+        def mock_do_login():
+            urls_seen.append(driver._url)
+            if driver._url.startswith("https://"):
+                raise req.exceptions.SSLError("SSLV3_ALERT_HANDSHAKE_FAILURE")
+
+        with patch.object(driver, "_do_login", side_effect=mock_do_login), \
+             patch("app.drivers.surfboard.time"):
+            driver.login()
+
+        assert len(urls_seen) == 3
+        assert urls_seen[0] == "https://192.168.100.1"
+        assert urls_seen[1] == "https://192.168.100.1"
+        assert urls_seen[2] == "http://192.168.100.1"
+        assert driver._logged_in is True
+
+    def test_ssl_error_all_fail_includes_tls_context(self):
+        """When all transports fail, error message includes TLS context."""
+        import requests as req
+
+        driver = SurfboardDriver("https://192.168.100.1", "admin", "password")
+
+        def mock_do_login():
+            if driver._url.startswith("https://"):
+                raise req.exceptions.SSLError("SSLV3_ALERT_HANDSHAKE_FAILURE")
+            raise req.ConnectionError("connection refused")
+
+        with patch.object(driver, "_do_login", side_effect=mock_do_login), \
+             patch("app.drivers.surfboard.time"):
+            with pytest.raises(
+                RuntimeError,
+                match=r"TLS error.*SSLV3.*connection refused on HTTP",
+            ):
+                driver.login()
+
+    def test_legacy_tls_adapter_mounted_on_session(self):
+        """Legacy TLS fallback mounts the adapter on the session."""
+        import requests as req
+
+        driver = SurfboardDriver("https://192.168.100.1", "admin", "password")
+
+        def mock_do_login():
+            if not driver._legacy_tls_attempted:
+                raise req.exceptions.SSLError("handshake failure")
+
+        with patch.object(driver, "_do_login", side_effect=mock_do_login), \
+             patch("app.drivers.surfboard.time"):
+            driver.login()
+
+        adapter = driver._session.get_adapter("https://")
+        assert isinstance(adapter, _LegacyTLSAdapter)
+
+    def test_fresh_session_preserves_legacy_tls(self):
+        """After legacy TLS succeeds, _fresh_session remounts the adapter."""
+        driver = SurfboardDriver("https://192.168.100.1", "admin", "password")
+        driver._legacy_tls_needed = True
+
+        driver._fresh_session()
+
+        adapter = driver._session.get_adapter("https://")
+        assert isinstance(adapter, _LegacyTLSAdapter)
+
+    def test_non_ssl_connection_error_skips_legacy_tls(self):
+        """Generic ConnectionError (not SSL) goes straight to HTTP fallback."""
+        import requests as req
+
+        driver = SurfboardDriver("https://192.168.100.1", "admin", "password")
+        urls_seen = []
+
+        def mock_do_login():
+            urls_seen.append(driver._url)
+            if driver._url.startswith("https://"):
+                raise req.ConnectionError("connection refused")
+
+        with patch.object(driver, "_do_login", side_effect=mock_do_login), \
+             patch("app.drivers.surfboard.time"):
+            driver.login()
+
+        assert len(urls_seen) == 2
+        assert urls_seen[0] == "https://192.168.100.1"
+        assert urls_seen[1] == "http://192.168.100.1"
+        assert driver._legacy_tls_attempted is False
