@@ -23,10 +23,12 @@ Channel data arrives as pipe-delimited strings ("|+|" between channels,
 import hashlib
 import hmac
 import logging
+import ssl
 import time
 from urllib.parse import urlparse, urlunparse
 
 import requests
+from requests.adapters import HTTPAdapter
 
 from .base import ModemDriver
 
@@ -43,6 +45,29 @@ _DS_FIELDS = 9
 # Fields per upstream channel (split by "^"):
 # num ^ lock ^ type ^ channelID ^ width ^ frequency ^ power ^
 _US_FIELDS = 7
+
+_HAS_LEGACY_TLS = hasattr(ssl, "OP_LEGACY_SERVER_CONNECT")
+
+
+class _LegacyTLSAdapter(HTTPAdapter):
+    """HTTPS adapter for SURFboard modems with old TLS stacks.
+
+    Some SB8200 firmware only supports TLS 1.0/1.1 with legacy ciphers
+    that OpenSSL 3.x rejects at default security level 2.  This adapter
+    lowers the requirements just enough to allow the handshake.
+
+    Only mounted on the driver's session after a normal TLS handshake fails.
+    """
+
+    def init_poolmanager(self, *args, **kwargs):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        ctx.options |= ssl.OP_LEGACY_SERVER_CONNECT
+        ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+        ctx.set_ciphers("DEFAULT:@SECLEVEL=1")
+        kwargs["ssl_context"] = ctx
+        super().init_poolmanager(*args, **kwargs)
 
 
 class SurfboardDriver(ModemDriver):
@@ -66,6 +91,8 @@ class SurfboardDriver(ModemDriver):
         url = self._normalize_url(url)
         self._http_fallback_url = ""
         self._transport_fallback_used = False
+        self._legacy_tls_attempted = False
+        self._legacy_tls_needed = False
         if url.startswith("http://"):
             self._http_fallback_url = url
             url = "https://" + url[len("http://"):]
@@ -103,6 +130,8 @@ class SurfboardDriver(ModemDriver):
         self._session.close()
         self._session = requests.Session()
         self._session.verify = False
+        if self._legacy_tls_needed:
+            self._mount_legacy_tls()
         self._private_key = ""
         self._cookie = ""
         self._logged_in = False
@@ -127,6 +156,21 @@ class SurfboardDriver(ModemDriver):
         )
         return True
 
+    def _mount_legacy_tls(self) -> None:
+        """Mount the legacy TLS adapter on the current session."""
+        self._session.mount("https://", _LegacyTLSAdapter())
+
+    def _fallback_to_legacy_tls(self) -> bool:
+        """Retry HTTPS with legacy TLS context once after a handshake failure."""
+        if self._legacy_tls_attempted or not _HAS_LEGACY_TLS:
+            return False
+        self._legacy_tls_attempted = True
+        self._mount_legacy_tls()
+        log.warning(
+            "SURFboard TLS handshake failed, retrying with legacy TLS context"
+        )
+        return True
+
     def login(self) -> None:
         """Two-phase HNAP login with HMAC.
 
@@ -139,20 +183,29 @@ class SurfboardDriver(ModemDriver):
         2. Second RELOAD: fresh session + 15s wait, retry
         3. Third RELOAD: fail
 
-        ConnectionError: fresh session + retry (transport failure).
+        TLS fallback: If the initial TLS handshake fails (old firmware),
+        retries with a legacy TLS context before falling back to HTTP.
         """
         if self._logged_in:
             return
 
         reload_count = 0
         conn_errors = 0
+        tls_error = ""
         while True:
             try:
                 self._do_login()
+                if self._legacy_tls_attempted:
+                    self._legacy_tls_needed = True
                 log.info("SURFboard HNAP login OK")
                 self._logged_in = True
                 return
-            except requests.ConnectionError:
+            except requests.exceptions.SSLError as e:
+                if not tls_error:
+                    tls_error = str(e)
+                if self._fallback_to_legacy_tls():
+                    time.sleep(1)
+                    continue
                 if self._fallback_to_http():
                     time.sleep(1)
                     continue
@@ -160,8 +213,27 @@ class SurfboardDriver(ModemDriver):
                 self._fresh_session()
                 if conn_errors >= 3:
                     raise RuntimeError(
-                        "SURFboard login failed: connection refused after retry"
+                        f"SURFboard login failed: TLS error ({tls_error}), "
+                        "connection refused on HTTP fallback"
                     )
+                log.warning(
+                    "SURFboard TLS error, retrying with fresh session"
+                )
+                time.sleep(1)
+            except requests.ConnectionError:
+                if self._fallback_to_http():
+                    time.sleep(1)
+                    continue
+                conn_errors += 1
+                self._fresh_session()
+                if conn_errors >= 3:
+                    msg = "SURFboard login failed: connection refused after retry"
+                    if tls_error:
+                        msg = (
+                            f"SURFboard login failed: TLS error ({tls_error}), "
+                            "connection refused on HTTP fallback"
+                        )
+                    raise RuntimeError(msg)
                 log.warning(
                     "SURFboard connection lost, retrying with fresh session"
                 )
