@@ -418,29 +418,39 @@ class TestDeviceInfo:
 # -- Value helpers --
 
 class TestValueHelpers:
+    """Value helpers now live in the shared arris_html module."""
+
     def test_parse_freq_hz_integer_mhz(self):
-        assert CM8200Driver._parse_freq_hz("795000000 Hz") == "795 MHz"
+        from app.drivers.arris_html import _parse_freq_hz
+        assert _parse_freq_hz("795000000 Hz") == "795 MHz"
 
     def test_parse_freq_hz_decimal_mhz(self):
-        assert CM8200Driver._parse_freq_hz("15500000 Hz") == "15.5 MHz"
+        from app.drivers.arris_html import _parse_freq_hz
+        assert _parse_freq_hz("15500000 Hz") == "15.5 MHz"
 
     def test_parse_freq_hz_empty(self):
-        assert CM8200Driver._parse_freq_hz("") == ""
+        from app.drivers.arris_html import _parse_freq_hz
+        assert _parse_freq_hz("") == ""
 
     def test_parse_freq_hz_zero(self):
-        assert CM8200Driver._parse_freq_hz("0 Hz") == "0 MHz"
+        from app.drivers.arris_html import _parse_freq_hz
+        assert _parse_freq_hz("0 Hz") == "0 MHz"
 
     def test_parse_value_dbmv(self):
-        assert CM8200Driver._parse_value("8.2 dBmV") == 8.2
+        from app.drivers.arris_html import _parse_value
+        assert _parse_value("8.2 dBmV") == 8.2
 
     def test_parse_value_db(self):
-        assert CM8200Driver._parse_value("43.0 dB") == 43.0
+        from app.drivers.arris_html import _parse_value
+        assert _parse_value("43.0 dB") == 43.0
 
     def test_parse_value_empty(self):
-        assert CM8200Driver._parse_value("") is None
+        from app.drivers.arris_html import _parse_value
+        assert _parse_value("") is None
 
     def test_parse_value_none(self):
-        assert CM8200Driver._parse_value(None) is None
+        from app.drivers.arris_html import _parse_value
+        assert _parse_value(None) is None
 
 
 # -- Edge cases --
