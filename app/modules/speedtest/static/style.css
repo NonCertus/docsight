@@ -34,6 +34,27 @@
 .st-signal-detail .st-us-mods { grid-column: 1 / -1; }
 .st-signal-detail .st-us-mods span { margin-right: 10px; }
 
+/* Enriched detail section */
+.st-enriched-wrap { margin-top: 12px; }
+.st-enriched-group { margin-bottom: 10px; }
+.st-enriched-heading {
+    font-size: 0.75em; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--muted);
+    margin-bottom: 6px; padding-bottom: 4px;
+    border-bottom: 1px solid var(--input-border);
+}
+.st-enriched-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 6px 16px;
+}
+.st-ookla-link {
+    color: var(--accent) !important;
+    text-decoration: none; opacity: 0.8;
+    transition: opacity 0.15s;
+}
+.st-ookla-link:hover { opacity: 1; text-decoration: underline; }
+
 /* Modern Card Design */
 .speedtest-chart-card {
     background: var(--card-bg, var(--card));

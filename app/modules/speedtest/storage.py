@@ -61,6 +61,36 @@ class SpeedtestStorage:
                     conn.execute("ALTER TABLE speedtest_results ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0")
             except Exception:
                 pass
+            # Migration: add enriched detail columns if missing
+            try:
+                cols = [r[1] for r in conn.execute("PRAGMA table_info(speedtest_results)").fetchall()]
+                enriched_cols = [
+                    ("isp", "TEXT"),
+                    ("server_host", "TEXT"),
+                    ("server_location", "TEXT"),
+                    ("server_country", "TEXT"),
+                    ("server_ip", "TEXT"),
+                    ("ping_low", "REAL"),
+                    ("ping_high", "REAL"),
+                    ("dl_latency_iqm", "REAL"),
+                    ("dl_latency_jitter", "REAL"),
+                    ("ul_latency_iqm", "REAL"),
+                    ("ul_latency_jitter", "REAL"),
+                    ("dl_bytes", "INTEGER"),
+                    ("ul_bytes", "INTEGER"),
+                    ("dl_elapsed_ms", "INTEGER"),
+                    ("ul_elapsed_ms", "INTEGER"),
+                    ("external_ip", "TEXT"),
+                    ("is_vpn", "INTEGER"),
+                    ("result_url", "TEXT"),
+                ]
+                for col_name, col_type in enriched_cols:
+                    if col_name not in cols:
+                        conn.execute(
+                            f"ALTER TABLE speedtest_results ADD COLUMN {col_name} {col_type}"
+                        )
+            except Exception:
+                pass
             # One-time migration: normalize offset-bearing timestamps to UTC Z-suffix.
             # Only runs once, tracked via speedtest_meta to avoid repeated scans.
             try:
@@ -98,23 +128,56 @@ class SpeedtestStorage:
                 pass
 
     def save_speedtest_results(self, results):
-        """Bulk insert speedtest results, ignoring duplicates by id."""
+        """Bulk insert speedtest results, upserting enriched fields on conflict."""
         if not results:
             return
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.executemany(
-                    "INSERT OR IGNORE INTO speedtest_results "
+                    "INSERT INTO speedtest_results "
                     "(id, timestamp, download_mbps, upload_mbps, download_human, "
                     "upload_human, ping_ms, jitter_ms, packet_loss_pct, "
-                    "server_id, server_name) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "server_id, server_name, "
+                    "isp, server_host, server_location, server_country, server_ip, "
+                    "ping_low, ping_high, dl_latency_iqm, dl_latency_jitter, "
+                    "ul_latency_iqm, ul_latency_jitter, dl_bytes, ul_bytes, "
+                    "dl_elapsed_ms, ul_elapsed_ms, external_ip, is_vpn, result_url) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                    "ON CONFLICT(id) DO UPDATE SET "
+                    "isp = excluded.isp, "
+                    "server_host = excluded.server_host, "
+                    "server_location = excluded.server_location, "
+                    "server_country = excluded.server_country, "
+                    "server_ip = excluded.server_ip, "
+                    "ping_low = excluded.ping_low, "
+                    "ping_high = excluded.ping_high, "
+                    "dl_latency_iqm = excluded.dl_latency_iqm, "
+                    "dl_latency_jitter = excluded.dl_latency_jitter, "
+                    "ul_latency_iqm = excluded.ul_latency_iqm, "
+                    "ul_latency_jitter = excluded.ul_latency_jitter, "
+                    "dl_bytes = excluded.dl_bytes, "
+                    "ul_bytes = excluded.ul_bytes, "
+                    "dl_elapsed_ms = excluded.dl_elapsed_ms, "
+                    "ul_elapsed_ms = excluded.ul_elapsed_ms, "
+                    "external_ip = excluded.external_ip, "
+                    "is_vpn = excluded.is_vpn, "
+                    "result_url = excluded.result_url",
                     [
                         (
                             r["id"], r["timestamp"], r["download_mbps"],
                             r["upload_mbps"], r["download_human"], r["upload_human"],
                             r["ping_ms"], r["jitter_ms"], r["packet_loss_pct"],
                             r.get("server_id"), r.get("server_name", ""),
+                            r.get("isp"), r.get("server_host"), r.get("server_location"),
+                            r.get("server_country"), r.get("server_ip"),
+                            r.get("ping_low"), r.get("ping_high"),
+                            r.get("dl_latency_iqm"), r.get("dl_latency_jitter"),
+                            r.get("ul_latency_iqm"), r.get("ul_latency_jitter"),
+                            r.get("dl_bytes"), r.get("ul_bytes"),
+                            r.get("dl_elapsed_ms"), r.get("ul_elapsed_ms"),
+                            r.get("external_ip"),
+                            1 if r.get("is_vpn") else (0 if r.get("is_vpn") is not None else None),
+                            r.get("result_url"),
                         )
                         for r in results
                     ],
@@ -137,13 +200,17 @@ class SpeedtestStorage:
         return [dict(r) for r in rows]
 
     def get_speedtest_by_id(self, result_id):
-        """Return a single speedtest result by id, or None."""
+        """Return a single speedtest result by id, or None (includes enriched fields)."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             row = conn.execute(
                 "SELECT id, timestamp, download_mbps, upload_mbps, download_human, "
                 "upload_human, ping_ms, jitter_ms, packet_loss_pct, "
-                "server_id, server_name "
+                "server_id, server_name, "
+                "isp, server_host, server_location, server_country, server_ip, "
+                "ping_low, ping_high, dl_latency_iqm, dl_latency_jitter, "
+                "ul_latency_iqm, ul_latency_jitter, dl_bytes, ul_bytes, "
+                "dl_elapsed_ms, ul_elapsed_ms, external_ip, is_vpn, result_url "
                 "FROM speedtest_results WHERE id = ?",
                 (result_id,),
             ).fetchone()

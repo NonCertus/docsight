@@ -25,5 +25,21 @@
   "speedtest_complete": "Speedtest abgeschlossen",
   "speedtest_timeout": "Speedtest dauert länger als erwartet. Aktualisiere die Seite.",
   "speedtest_empty_title": "Noch keine Speedtest-Ergebnisse",
-  "speedtest_empty_desc": "Automatische Tests erscheinen hier, sobald der Zeitplan läuft. Du kannst auch einen manuellen Test starten."
+  "speedtest_empty_desc": "Automatische Tests erscheinen hier, sobald der Zeitplan läuft. Du kannst auch einen manuellen Test starten.",
+  "speedtest_detail_connection": "Verbindung",
+  "speedtest_detail_isp": "ISP",
+  "speedtest_detail_external_ip": "Externe IP",
+  "speedtest_detail_vpn": "VPN",
+  "speedtest_detail_server": "Server",
+  "speedtest_detail_server_location": "Standort",
+  "speedtest_detail_server_host": "Host",
+  "speedtest_detail_latency": "Latenz-Details",
+  "speedtest_detail_ping_range": "Ping-Bereich",
+  "speedtest_detail_dl_latency": "DL-Latenz (IQM / Jitter)",
+  "speedtest_detail_ul_latency": "UL-Latenz (IQM / Jitter)",
+  "speedtest_detail_transfer": "Transfer",
+  "speedtest_detail_dl_transfer": "Download",
+  "speedtest_detail_ul_transfer": "Upload",
+  "speedtest_detail_ookla": "Ookla-Ergebnis",
+  "speedtest_detail_view_ookla": "Auf Speedtest.net ansehen"
 }
