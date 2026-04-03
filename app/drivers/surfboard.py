@@ -20,6 +20,7 @@ Channel data arrives as pipe-delimited strings ("|+|" between channels,
 "^" between fields within a channel).
 """
 
+import base64
 import hashlib
 import hmac
 import logging
@@ -111,6 +112,8 @@ class SurfboardDriver(ModemDriver):
         # Action namespace: "" = unknown, "Customer" (S34) or "Moto" (SB8200).
         # Persists across session resets (firmware property, not session state).
         self._action_ns: str = ""
+        self._html_mode = False
+        self._html_status_cache: str | None = None
 
     @staticmethod
     def _normalize_url(url: str) -> str:
@@ -175,6 +178,48 @@ class SurfboardDriver(ModemDriver):
         )
         return True
 
+    def _html_login(self) -> None:
+        """Authenticate via HTML GET endpoint (fallback for broken HNAP).
+
+        Uses the browser login path: GET /cmconnectionstatus.html?login_{base64}
+        This works on SB8200 firmware where HNAP POST body reads fail.
+
+        Validates that the response contains channel tables to distinguish
+        a successful auth from a login page or error page.
+        """
+        creds = base64.b64encode(
+            f"{self._user}:{self._password}".encode()
+        ).decode()
+        url = f"{self._url}/cmconnectionstatus.html?login_{creds}"
+        try:
+            r = self._session.get(url, timeout=30)
+            r.raise_for_status()
+            body = r.text
+            if len(body) < 500 or "downstream" not in body.lower():
+                raise RuntimeError(
+                    "SURFboard HTML login failed: response does not contain "
+                    f"channel data ({len(body)} bytes)"
+                )
+            self._html_status_cache = body
+            self._logged_in = True
+            log.info("SURFboard HTML login OK (%d bytes)", len(body))
+        except requests.RequestException as e:
+            raise RuntimeError(f"SURFboard HTML login failed: {e}")
+
+    def _html_get_docsis_data(self) -> dict:
+        """Retrieve DOCSIS data via HTML table scraping (fallback mode)."""
+        from .arris_html import parse_arris_channel_tables
+
+        if self._html_status_cache:
+            html = self._html_status_cache
+            self._html_status_cache = None
+        else:
+            self._html_login()
+            html = self._html_status_cache or ""
+            self._html_status_cache = None
+
+        return parse_arris_channel_tables(html)
+
     def login(self) -> None:
         """Two-phase HNAP login with HMAC.
 
@@ -191,6 +236,10 @@ class SurfboardDriver(ModemDriver):
         retries with a legacy TLS context before falling back to HTTP.
         """
         if self._logged_in:
+            return
+
+        if self._html_mode:
+            self._html_login()
             return
 
         reload_count = 0
@@ -216,10 +265,24 @@ class SurfboardDriver(ModemDriver):
                 conn_errors += 1
                 self._fresh_session()
                 if conn_errors >= 3:
-                    raise RuntimeError(
+                    msg = (
                         f"SURFboard login failed: TLS error ({tls_error}), "
                         "connection refused on HTTP fallback"
                     )
+                    log.warning(
+                        "SURFboard HNAP login exhausted all retries, "
+                        "trying HTML fallback"
+                    )
+                    try:
+                        self._html_login()
+                        self._html_mode = True
+                        log.info(
+                            "SURFboard switched to HTML mode "
+                            "(HNAP broken on this firmware)"
+                        )
+                        return
+                    except RuntimeError:
+                        raise RuntimeError(msg)
                 log.warning(
                     "SURFboard TLS error, retrying with fresh session"
                 )
@@ -245,7 +308,20 @@ class SurfboardDriver(ModemDriver):
                             f"SURFboard login failed: TLS error ({tls_error}), "
                             f"{e}"
                         )
-                    raise RuntimeError(msg)
+                    log.warning(
+                        "SURFboard HNAP login exhausted all retries, "
+                        "trying HTML fallback"
+                    )
+                    try:
+                        self._html_login()
+                        self._html_mode = True
+                        log.info(
+                            "SURFboard switched to HTML mode "
+                            "(HNAP broken on this firmware)"
+                        )
+                        return
+                    except RuntimeError:
+                        raise RuntimeError(msg)
                 log.warning(
                     "SURFboard connection lost, retrying with fresh session: %s",
                     e,
@@ -405,6 +481,8 @@ class SurfboardDriver(ModemDriver):
         On ConnectionError: fresh session + re-authenticate + retry once.
             Resets speculative namespace so auto-detection restarts cleanly.
         """
+        if self._html_mode:
+            return self._html_get_docsis_data()
         saved_ns = self._action_ns
         try:
             return self._fetch_docsis_data()
@@ -506,6 +584,8 @@ class SurfboardDriver(ModemDriver):
 
     def get_device_info(self) -> dict:
         """Retrieve device model and firmware from HNAP."""
+        if self._html_mode:
+            return {"manufacturer": "Arris", "model": "SB8200", "sw_version": ""}
         try:
             model, sw = self._fetch_device_fields()
 
