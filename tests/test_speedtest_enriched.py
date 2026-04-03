@@ -108,3 +108,70 @@ def test_save_upserts_enriched_fields(tmp_path):
     assert row["download_mbps"] == pytest.approx(500.0)
     assert row["ping_ms"] == pytest.approx(10.0)
     assert row["server_name"] == "Test Server"
+
+
+# ---------------------------------------------------------------------------
+# Client parsing tests
+# ---------------------------------------------------------------------------
+
+from app.modules.speedtest.client import SpeedtestClient  # noqa: E402
+
+FULL_API_RESPONSE = {
+    "id": 1444, "ping": 23.3,
+    "download_bits": 1095383784, "upload_bits": 54018392,
+    "download_bits_human": "1.10 Gbps", "upload_bits_human": "54.02 Mbps",
+    "data": {
+        "timestamp": "2026-04-03T14:10:20Z",
+        "ping": {"jitter": 3.771, "latency": 23.299, "low": 16.135, "high": 24.368},
+        "download": {
+            "bandwidth": 136922973, "bytes": 1316377479, "elapsed": 9903,
+            "latency": {"iqm": 39.149, "low": 14.115, "high": 115.655, "jitter": 6.651},
+        },
+        "upload": {
+            "bandwidth": 6752299, "bytes": 41127544, "elapsed": 6102,
+            "latency": {"iqm": 80.022, "low": 11.653, "high": 1547.885, "jitter": 41.352},
+        },
+        "packetLoss": 0,
+        "isp": "Vodafone Germany",
+        "interface": {"internalIp": "192.168.178.27", "externalIp": "31.16.193.86", "isVpn": False},
+        "server": {"id": 44081, "host": "speedtest.23m.com", "port": 8080,
+                   "name": "23M GmbH", "location": "Frankfurt am Main",
+                   "country": "Germany", "ip": "212.83.32.10"},
+        "result": {"id": "abc-uuid", "url": "https://www.speedtest.net/result/c/abc-uuid", "persisted": True},
+    },
+}
+
+
+def test_parse_result_extracts_enriched_fields():
+    """_parse_result() must extract all 18 enriched fields with correct values and rounding."""
+    client = SpeedtestClient.__new__(SpeedtestClient)
+    result = client._parse_result(FULL_API_RESPONSE)
+
+    assert result["isp"] == "Vodafone Germany"
+    assert result["server_host"] == "speedtest.23m.com"
+    assert result["server_location"] == "Frankfurt am Main"
+    assert result["server_country"] == "Germany"
+    assert result["server_ip"] == "212.83.32.10"
+    assert result["ping_low"] == 16.14   # round(16.135, 2)
+    assert result["ping_high"] == 24.37  # round(24.368, 2)
+    assert result["dl_latency_iqm"] == 39.15   # round(39.149, 2)
+    assert result["dl_latency_jitter"] == 6.65  # round(6.651, 2)
+    assert result["ul_latency_iqm"] == 80.02    # round(80.022, 2)
+    assert result["ul_latency_jitter"] == 41.35  # round(41.352, 2)
+    assert result["dl_bytes"] == 1316377479
+    assert result["ul_bytes"] == 41127544
+    assert result["dl_elapsed_ms"] == 9903
+    assert result["ul_elapsed_ms"] == 6102
+    assert result["external_ip"] == "31.16.193.86"
+    assert result["is_vpn"] is False
+    assert result["result_url"] == "https://www.speedtest.net/result/c/abc-uuid"
+
+
+def test_parse_result_handles_missing_enriched_fields():
+    """_parse_result() must return None for all enriched fields when data is minimal."""
+    client = SpeedtestClient.__new__(SpeedtestClient)
+    minimal_item = {"data": {"timestamp": "2026-04-03T14:10:20Z"}}
+    result = client._parse_result(minimal_item)
+
+    for field in ENRICHED_COLUMNS:
+        assert result[field] is None, f"Expected None for {field}, got {result[field]!r}"

@@ -39,6 +39,19 @@ class SpeedtestClient:
         ping_obj = data.get("ping") or {}
         server = data.get("server") or {}
         raw_ts = data.get("timestamp") or item.get("created_at", "")
+        dl = data.get("download") or {}
+        ul = data.get("upload") or {}
+        dl_lat = dl.get("latency") or {}
+        ul_lat = ul.get("latency") or {}
+        iface = data.get("interface") or {}
+        result_obj = data.get("result") or {}
+
+        def _round2(val):
+            return round(float(val), 2) if val is not None else None
+
+        ping_low_raw = ping_obj.get("low")
+        ping_high_raw = ping_obj.get("high")
+
         return {
             "id": item.get("id"),
             "timestamp": self._normalize_ts(raw_ts),
@@ -51,6 +64,25 @@ class SpeedtestClient:
             "packet_loss_pct": round(float(data.get("packetLoss") or 0), 2),
             "server_id": server.get("id"),
             "server_name": server.get("name", ""),
+            # enriched fields
+            "isp": data.get("isp"),
+            "server_host": server.get("host"),
+            "server_location": server.get("location"),
+            "server_country": server.get("country"),
+            "server_ip": server.get("ip"),
+            "ping_low": _round2(ping_low_raw),
+            "ping_high": _round2(ping_high_raw),
+            "dl_latency_iqm": _round2(dl_lat.get("iqm")),
+            "dl_latency_jitter": _round2(dl_lat.get("jitter")),
+            "ul_latency_iqm": _round2(ul_lat.get("iqm")),
+            "ul_latency_jitter": _round2(ul_lat.get("jitter")),
+            "dl_bytes": dl.get("bytes"),
+            "ul_bytes": ul.get("bytes"),
+            "dl_elapsed_ms": dl.get("elapsed"),
+            "ul_elapsed_ms": ul.get("elapsed"),
+            "external_ip": iface.get("externalIp"),
+            "is_vpn": iface.get("isVpn"),
+            "result_url": result_obj.get("url"),
         }
 
     def get_latest(self, count=1):
