@@ -227,13 +227,12 @@ class TestDiscordWebhookSend:
         assert channel.send({"severity": "info", "event_type": "test",
                              "message": "x", "details": {}}) is False
 
-    def test_url_token_redacted_in_safe_url(self):
+    def test_log_label_does_not_contain_url(self):
         channel = DiscordWebhookChannel(
             "https://discord.com/api/webhooks/123456/secret-token-here",
         )
-        assert "secret-token-here" not in channel._safe_url
-        assert "123456" in channel._safe_url
-        assert channel._safe_url.endswith("/***")
+        assert "secret-token-here" not in channel._log_label
+        assert "123456" not in channel._log_label
 
     @patch("app.notifier.requests.post")
     def test_send_handles_none_details(self, mock_post):
@@ -257,6 +256,7 @@ class TestDiscordWebhookSend:
             channel.send({"severity": "info", "event_type": "test",
                           "message": "x", "details": {}})
         assert secret not in caplog.text
+        assert "123" not in caplog.text
         assert "404" in caplog.text
 
 

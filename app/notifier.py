@@ -69,9 +69,7 @@ class DiscordWebhookChannel(NotificationChannel):
 
     def __init__(self, url):
         self._url = url
-        # Redact token from URL for logging (keep webhook ID only)
-        parts = url.rsplit("/", 1)
-        self._safe_url = parts[0] + "/***" if len(parts) == 2 else url
+        self._log_label = "Discord webhook"
 
     @staticmethod
     def _format_embed(payload: dict) -> dict:
@@ -129,11 +127,11 @@ class DiscordWebhookChannel(NotificationChannel):
             # Sanitize: raise_for_status() embeds the full URL (with token)
             log.warning(
                 "Discord webhook POST failed (%s): HTTP %s",
-                self._safe_url, e.response.status_code if e.response is not None else "unknown",
+                self._log_label, e.response.status_code if e.response is not None else "unknown",
             )
             return False
         except Exception as e:
-            log.warning("Discord webhook POST failed (%s): %s", self._safe_url, type(e).__name__)
+            log.warning("Discord webhook POST failed (%s): %s", self._log_label, type(e).__name__)
             return False
 
 
