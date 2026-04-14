@@ -368,6 +368,7 @@
   "demo_device": "",
   "not_required": "",
   "vodafone_no_error_counters": "",
+  "errors_not_available": "",
   "temperature": "",
   "temp_overlay_show": "",
   "temp_overlay_hide": "",

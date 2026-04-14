@@ -529,6 +529,14 @@
                 <span class="metric-label">{{ t.card_errors }}</span>
                 <div class="metric-icon amber"><i data-lucide="alert-triangle"></i></div>
             </div>
+            {% if s.errors_supported is defined and not s.errors_supported %}
+            <div class="metric-value-row">
+                <div class="metric-value" style="color:var(--text-muted);">N/A</div>
+            </div>
+            <div class="metric-sub">
+                <span class="badge badge-muted">{{ t.errors_not_available }}</span>
+            </div>
+            {% else %}
             <div class="metric-value-row">
                 <div class="metric-value" style="color:var(--{{ error_health }});">{{ s.ds_uncorr_pct }}<span class="unit">%</span></div>
                 <canvas class="metric-spark" id="spark-errors" width="144" height="56"></canvas>
@@ -537,6 +545,7 @@
                 <span class="badge badge-{{ error_health }}">{{ health_labels[error_health] }}</span>
                 <span class="range">{{ s.ds_correctable_errors|fmt_k }} {{ t.corr }} / {{ s.ds_uncorrectable_errors|fmt_k }} {{ t.uncorr }}</span>
             </div>
+            {% endif %}
         </div>
 
         {# Card 4: Speed (conditional) #}
