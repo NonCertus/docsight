@@ -388,6 +388,7 @@
   "demo_device": "DOCSight Demo Router",
   "not_required": "Not required for this modem",
   "vodafone_no_error_counters": "Error counters are not available for all Vodafone Station models.",
+  "errors_not_available": "Not available for this modem",
   "temperature": "Temperature",
   "temperature_unit": "Temperature Unit",
   "temp_overlay_show": "Show temperature overlay",

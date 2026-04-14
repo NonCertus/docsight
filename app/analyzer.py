@@ -483,6 +483,10 @@ def analyze(data: dict) -> dict:
     us_powers = [c["power"] for c in us_channels if c["power"] is not None]
     ds_snrs = [c["snr"] for c in ds_channels if c["snr"] is not None]
 
+    has_error_data = any(
+        c["correctable_errors"] is not None or c["uncorrectable_errors"] is not None
+        for c in ds_channels
+    )
     total_corr = sum(c["correctable_errors"] for c in ds_channels if c["correctable_errors"] is not None)
     total_uncorr = sum(c["uncorrectable_errors"] for c in ds_channels if c["uncorrectable_errors"] is not None)
 
@@ -503,6 +507,7 @@ def analyze(data: dict) -> dict:
         "ds_snr_avg": round(sum(ds_snrs) / len(ds_snrs), 1) if ds_snrs else 0,
         "ds_correctable_errors": total_corr,
         "ds_uncorrectable_errors": total_uncorr,
+        "errors_supported": has_error_data,
         "us_capacity_mbps": us_capacity,
     }
 
