@@ -374,6 +374,15 @@
                     <span class="hero-meta-item"><i data-lucide="gauge"></i> {{ booked_download|int }}/{{ booked_upload|int }} MBit/s</span>
                     {% endif %}
                     <span class="hero-meta-item"><i data-lucide="radio"></i> {{ s.ds_total }}/{{ s.us_total }} Ch</span>
+                    {% if device_info and device_info.model %}
+                    <span class="hero-meta-item"><i data-lucide="router"></i> {{ device_info.model }}</span>
+                    {% endif %}
+                    {% if device_info and device_info.sw_version %}
+                    <span class="hero-meta-item"><i data-lucide="cpu"></i> {{ device_info.sw_version }}</span>
+                    {% endif %}
+                    {% if device_info and device_info.get('uptime_seconds') is not none %}
+                    <span class="hero-meta-item"><i data-lucide="clock"></i> {{ device_info.uptime_seconds|fmt_uptime }}</span>
+                    {% endif %}
                     {% if gaming_quality_enabled and gaming_index %}
                     {% set _g = gaming_index.grade|upper %}
                     {% set _badge_class = 'badge-good' if _g in ('A', 'B') else ('badge-warn' if _g == 'C' else 'badge-crit') %}

@@ -351,6 +351,25 @@ def format_speed_unit(value):
     return "GBit/s" if value >= 1000 else "MBit/s"
 
 
+@app.template_filter("fmt_uptime")
+def format_uptime(seconds):
+    """Format uptime seconds to human-readable string: '3d 12h 5m'."""
+    try:
+        seconds = int(seconds)
+    except (ValueError, TypeError):
+        return ""
+    if seconds < 0:
+        return ""
+    days, rem = divmod(seconds, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes = rem // 60
+    if days > 0:
+        return f"{days}d {hours}h {minutes}m"
+    if hours > 0:
+        return f"{hours}h {minutes}m"
+    return f"{minutes}m"
+
+
 def _get_lang():
     """Get language from query param or config."""
     lang = request.args.get("lang")
