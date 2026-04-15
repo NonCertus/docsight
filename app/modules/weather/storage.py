@@ -21,13 +21,22 @@ class WeatherStorage:
     Creates the weather_data table if it doesn't exist.
     """
 
+    BUSY_TIMEOUT_MS = 5000
+
     def __init__(self, db_path):
         self.db_path = db_path
         self._ensure_table()
 
+    def _connect(self):
+        """Return a connection with WAL mode and busy timeout."""
+        conn = sqlite3.connect(self.db_path)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute(f"PRAGMA busy_timeout={self.BUSY_TIMEOUT_MS}")
+        return conn
+
     def _ensure_table(self):
         """Create the weather_data table if it doesn't exist."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 "CREATE TABLE IF NOT EXISTS weather_data ("
                 "  timestamp TEXT PRIMARY KEY,"
@@ -46,7 +55,7 @@ class WeatherStorage:
         if not records:
             return
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 conn.executemany(
                     "INSERT OR IGNORE INTO weather_data "
                     "(timestamp, temperature, is_demo) VALUES (?, ?, ?)",
@@ -58,7 +67,7 @@ class WeatherStorage:
 
     def get_weather_data(self, limit=2000):
         """Return weather data, newest first."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT timestamp, temperature FROM weather_data "
@@ -71,7 +80,7 @@ class WeatherStorage:
         """Return weather data within a timestamp range, oldest first."""
         start_ts = _normalize_range_ts(start_ts, " ")
         end_ts = _normalize_range_ts(end_ts, " ")
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 "SELECT timestamp, temperature FROM weather_data "
@@ -83,6 +92,6 @@ class WeatherStorage:
 
     def get_weather_count(self):
         """Return number of weather records."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             row = conn.execute("SELECT COUNT(*) FROM weather_data").fetchone()
         return row[0] if row else 0

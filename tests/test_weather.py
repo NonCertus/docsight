@@ -149,6 +149,52 @@ class TestWeatherStorage:
         storage.save_weather_data([{"timestamp": "2026-02-27 10:00:00Z", "temperature": 5.0}])
         assert storage.get_weather_count() == 1
 
+    def test_wal_mode_enabled(self, tmp_path):
+        """WeatherStorage connections use WAL journal mode."""
+        import sqlite3
+        storage = WeatherStorage(str(tmp_path / "test.db"))
+        with storage._connect() as conn:
+            mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+        assert mode == "wal"
+
+    def test_busy_timeout_set(self, tmp_path):
+        """WeatherStorage connections have busy_timeout configured."""
+        storage = WeatherStorage(str(tmp_path / "test.db"))
+        with storage._connect() as conn:
+            timeout = conn.execute("PRAGMA busy_timeout").fetchone()[0]
+        assert timeout == WeatherStorage.BUSY_TIMEOUT_MS
+
+    def test_concurrent_write_no_lock_error(self, tmp_path, caplog):
+        """Two WeatherStorage instances writing to the same DB should not raise lock errors."""
+        import logging
+        import threading
+        db_path = str(tmp_path / "concurrent.db")
+        errors = []
+
+        def writer(writer_id):
+            try:
+                s = WeatherStorage(db_path)
+                for i in range(50):
+                    s.save_weather_data([{
+                        "timestamp": f"2026-01-{writer_id:02d} {i:02d}:00:00Z",
+                        "temperature": float(i),
+                    }])
+            except Exception as e:
+                errors.append(e)
+
+        with caplog.at_level(logging.ERROR, logger="docsis.storage.weather"):
+            t1 = threading.Thread(target=writer, args=(1,))
+            t2 = threading.Thread(target=writer, args=(2,))
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+
+        assert errors == [], f"Concurrent writes failed: {errors}"
+        assert "database is locked" not in caplog.text
+        storage = WeatherStorage(db_path)
+        assert storage.get_weather_count() == 100
+
 
 
 # ── WeatherCollector Tests ──
