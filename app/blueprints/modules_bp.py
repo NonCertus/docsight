@@ -298,11 +298,15 @@ def api_modules_install():
     if not download_github_directory(data["download_url"], target_dir):
         return jsonify({"success": False, "error": "Download failed"}), 500
 
-    # Post-download validation -- inline guard so CodeQL sees the barrier
-    manifest_path = safe_child_file(target_dir, "manifest.json")
-    _real_modules = os.path.realpath(modules_dir) + os.sep
-    if not os.path.realpath(manifest_path).startswith(_real_modules):
-        return jsonify({"success": False, "error": "Path traversal blocked"}), 400
+    # Post-download validation: build manifest_path from the validated
+    # target_dir and verify containment inline so the taint checker sees
+    # the barrier directly before the filesystem sinks.
+    manifest_path = os.path.join(target_dir, "manifest.json")
+    _real_base = os.path.realpath(modules_dir)
+    _real_manifest = os.path.realpath(manifest_path)
+    if not _real_manifest.startswith(_real_base + os.sep):
+        return jsonify({"success": False, "error": "Invalid path"}), 400
+    manifest_path = _real_manifest
     if not os.path.isfile(manifest_path):
         shutil.rmtree(target_dir, ignore_errors=True)
         return jsonify({"success": False, "error": "Downloaded module missing manifest.json"}), 500
