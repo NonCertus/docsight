@@ -64,6 +64,47 @@ class TestModulesInstall:
             assert "conflicts" in data.get("error", "").lower() or resp.status_code == 409
 
 
+    def test_rejects_invalid_module_id(self, client):
+        """Module ID with uppercase / special chars is rejected with 400."""
+        resp = client.post("/api/modules/install",
+                           data=json.dumps({"id": "INVALID-ID!", "download_url": "https://example.com"}),
+                           content_type="application/json")
+        assert resp.status_code == 400
+        data = json.loads(resp.data)
+        assert data["success"] is False
+        assert "invalid" in data["error"].lower()
+
+    def test_rejects_traversal_id_with_400(self, client):
+        """Path-traversal ID is rejected with 400 (not just a generic error)."""
+        resp = client.post("/api/modules/install",
+                           data=json.dumps({"id": "../../etc/passwd", "download_url": "https://example.com"}),
+                           content_type="application/json")
+        assert resp.status_code == 400
+        data = json.loads(resp.data)
+        assert data["success"] is False
+
+    def test_downloader_not_called_for_invalid_id(self, client):
+        """Downloader must never be invoked when the module ID is invalid."""
+        with patch("app.blueprints.modules_bp.download_github_directory") as mock_dl:
+            resp = client.post("/api/modules/install",
+                               data=json.dumps({"id": "../bad", "download_url": "https://example.com"}),
+                               content_type="application/json")
+            assert resp.status_code == 400
+            mock_dl.assert_not_called()
+
+
+class TestThemesInstall:
+    def test_rejects_invalid_theme_id(self, client):
+        """Theme ID with special chars or traversal patterns is rejected with 400."""
+        for bad_id in ["../etc/passwd", "UPPER", "has spaces", "semi;colon"]:
+            resp = client.post("/api/themes/install",
+                               data=json.dumps({"id": bad_id, "download_url": "https://example.com"}),
+                               content_type="application/json")
+            assert resp.status_code == 400, f"Expected 400 for theme id {bad_id!r}, got {resp.status_code}"
+            data = json.loads(resp.data)
+            assert data["success"] is False
+
+
 class TestModulesUninstall:
     def test_rejects_missing_id(self, client):
         resp = client.post("/api/modules/uninstall",
