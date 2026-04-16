@@ -1075,6 +1075,122 @@ class TestThemeSecurity:
         assert "static" in info.contributes
 
 
+class TestThemePathTraversal:
+    """Theme contributes['theme'] must not allow path traversal."""
+
+    def test_traversal_blocked_on_load(self, tmp_path):
+        """A theme with '../' in contributes.theme must be rejected by the sanitizer."""
+        mod_dir = tmp_path / "eviltheme"
+        mod_dir.mkdir()
+        # Place a valid JSON file at the traversal target to prove the
+        # sanitizer blocks it -- without the fix, this would load.
+        escape_target = tmp_path / "stolen.json"
+        escape_target.write_text(json.dumps(_VALID_THEME))
+        (mod_dir / "manifest.json").write_text(json.dumps({
+            "id": "test.eviltheme",
+            "name": "Evil Theme",
+            "description": "desc",
+            "version": "1.0.0",
+            "author": "Test",
+            "minAppVersion": "2026.2",
+            "type": "theme",
+            "contributes": {"theme": "../stolen.json"},
+        }))
+
+        app = Flask(__name__)
+        app.config["TESTING"] = True
+        loader = ModuleLoader(app, search_paths=[str(tmp_path)])
+        loader.load_all()
+
+        mod = next(m for m in loader.get_modules() if m.id == "test.eviltheme")
+        assert mod.error is not None
+        assert "unsafe manifest reference" in mod.error.lower()
+        assert mod.theme_data is None
+
+    def test_slash_in_filename_blocked(self, tmp_path):
+        """A theme filename containing slashes must be rejected by the sanitizer."""
+        mod_dir = tmp_path / "slashtheme"
+        mod_dir.mkdir()
+        sub = mod_dir / "subdir"
+        sub.mkdir()
+        (sub / "theme.json").write_text(json.dumps(_VALID_THEME))
+        (mod_dir / "manifest.json").write_text(json.dumps({
+            "id": "test.slashtheme",
+            "name": "Slash Theme",
+            "description": "desc",
+            "version": "1.0.0",
+            "author": "Test",
+            "minAppVersion": "2026.2",
+            "type": "theme",
+            "contributes": {"theme": "subdir/theme.json"},
+        }))
+
+        app = Flask(__name__)
+        app.config["TESTING"] = True
+        loader = ModuleLoader(app, search_paths=[str(tmp_path)])
+        loader.load_all()
+
+        mod = next(m for m in loader.get_modules() if m.id == "test.slashtheme")
+        assert mod.error is not None
+        assert "unsafe manifest reference" in mod.error.lower()
+
+    def test_valid_theme_filename_works(self, tmp_path):
+        """A well-formed theme filename still loads correctly."""
+        mod_dir = tmp_path / "goodtheme"
+        mod_dir.mkdir()
+        (mod_dir / "manifest.json").write_text(json.dumps({
+            "id": "test.goodtheme",
+            "name": "Good Theme",
+            "description": "desc",
+            "version": "1.0.0",
+            "author": "Test",
+            "minAppVersion": "2026.2",
+            "type": "theme",
+            "contributes": {"theme": "my-theme.json"},
+        }))
+        (mod_dir / "my-theme.json").write_text(json.dumps(_VALID_THEME))
+
+        app = Flask(__name__)
+        app.config["TESTING"] = True
+        loader = ModuleLoader(app, search_paths=[str(tmp_path)])
+        loader.load_all()
+
+        mod = next(m for m in loader.get_modules() if m.id == "test.goodtheme")
+        assert mod.theme_data is not None
+        assert "--bg" in mod.theme_data["dark"]
+
+    def test_disabled_theme_traversal_blocked(self, tmp_path):
+        """Disabled themes with traversal in contributes.theme must also be blocked."""
+        mod_dir = tmp_path / "disabledevil"
+        mod_dir.mkdir()
+        # Place a valid theme file at the traversal target so the old
+        # unsanitized code would successfully load it.
+        escape_target = tmp_path / "stolen_theme.json"
+        escape_target.write_text(json.dumps(_VALID_THEME))
+        (mod_dir / "manifest.json").write_text(json.dumps({
+            "id": "test.disabledevil",
+            "name": "Disabled Evil",
+            "description": "desc",
+            "version": "1.0.0",
+            "author": "Test",
+            "minAppVersion": "2026.2",
+            "type": "theme",
+            "contributes": {"theme": "../stolen_theme.json"},
+        }))
+
+        app = Flask(__name__)
+        app.config["TESTING"] = True
+        loader = ModuleLoader(
+            app,
+            search_paths=[str(tmp_path)],
+            disabled_ids={"test.disabledevil"},
+        )
+        loader.load_all()
+
+        mod = next(m for m in loader.get_modules() if m.id == "test.disabledevil")
+        assert mod.theme_data is None
+
+
 def test_driver_in_valid_contributes():
     from app.module_loader import VALID_CONTRIBUTES
     assert "driver" in VALID_CONTRIBUTES

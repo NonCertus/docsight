@@ -4,6 +4,7 @@ import os
 import re
 
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9_.]+$")
+_SAFE_FILENAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$")
 
 _ALLOWED_CHILD_FILES = frozenset({"manifest.json", "theme.json"})
 
@@ -49,5 +50,34 @@ def safe_child_file(validated_dir: str, filename: str) -> str:
 
     if os.path.commonpath([real_dir, real_candidate]) != real_dir:
         raise ValueError(f"Child file escapes directory: {filename!r}")
+
+    return real_candidate
+
+
+def safe_manifest_ref(module_dir: str, filename: str) -> str:
+    """Resolve a manifest-supplied filename safely inside *module_dir*.
+
+    Unlike :func:`safe_child_file` (which uses a hardcoded allowlist),
+    this accepts any filename that matches a safe pattern (alphanumeric,
+    dots, hyphens, underscores -- no slashes, no ``..``).
+
+    Use this for values read from ``contributes`` in a module's manifest
+    where the exact filename is author-chosen.
+
+    Raises ``ValueError`` if the filename contains path separators,
+    traversal sequences, or escapes the module directory.
+    """
+    if not isinstance(filename, str) or not _SAFE_FILENAME_RE.match(filename):
+        raise ValueError(
+            f"Unsafe manifest reference: {filename!r} "
+            "(must be a plain filename with no path separators)"
+        )
+
+    candidate = os.path.join(module_dir, filename)
+    real_base = os.path.realpath(module_dir)
+    real_candidate = os.path.realpath(candidate)
+
+    if os.path.commonpath([real_base, real_candidate]) != real_base:
+        raise ValueError(f"Manifest reference escapes module directory: {filename!r}")
 
     return real_candidate

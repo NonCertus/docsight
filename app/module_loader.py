@@ -14,6 +14,7 @@ from flask import send_from_directory
 from app import analyzer as _analyzer
 from app import config as _cfg
 from app.i18n import _TRANSLATIONS
+from app.path_safety import safe_manifest_ref
 
 log = logging.getLogger("docsis.modules")
 
@@ -593,7 +594,7 @@ class ModuleLoader:
                 # the settings gallery can show previews for all themes.
                 if mod.type == "theme" and "theme" in mod.contributes:
                     try:
-                        theme_path = os.path.join(
+                        theme_path = safe_manifest_ref(
                             mod.path, mod.contributes["theme"]
                         )
                         if os.path.isfile(theme_path):
@@ -675,7 +676,7 @@ class ModuleLoader:
 
         # Theme
         if "theme" in c:
-            theme_path = os.path.join(mod.path, c["theme"])
+            theme_path = safe_manifest_ref(mod.path, c["theme"])
             if not os.path.isfile(theme_path):
                 raise ManifestError(f"Theme file not found: {c['theme']}")
             with open(theme_path, "r", encoding="utf-8") as f:

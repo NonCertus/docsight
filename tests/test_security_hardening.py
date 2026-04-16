@@ -260,6 +260,46 @@ class TestSafeChildFile:
             safe_child_file(str(tmp_path), "../../../etc/passwd")
 
 
+class TestSafeManifestRef:
+    """safe_manifest_ref must block traversal and path separators."""
+
+    def test_plain_filename_allowed(self, tmp_path):
+        from app.path_safety import safe_manifest_ref
+
+        result = safe_manifest_ref(str(tmp_path), "theme.json")
+        assert result.endswith("theme.json")
+
+    def test_dashes_and_dots_allowed(self, tmp_path):
+        from app.path_safety import safe_manifest_ref
+
+        result = safe_manifest_ref(str(tmp_path), "my-custom-theme.v2.json")
+        assert result.endswith("my-custom-theme.v2.json")
+
+    def test_traversal_blocked(self, tmp_path):
+        from app.path_safety import safe_manifest_ref
+
+        with pytest.raises(ValueError, match="Unsafe manifest reference"):
+            safe_manifest_ref(str(tmp_path), "../../../etc/passwd")
+
+    def test_slash_blocked(self, tmp_path):
+        from app.path_safety import safe_manifest_ref
+
+        with pytest.raises(ValueError, match="Unsafe manifest reference"):
+            safe_manifest_ref(str(tmp_path), "subdir/theme.json")
+
+    def test_empty_string_blocked(self, tmp_path):
+        from app.path_safety import safe_manifest_ref
+
+        with pytest.raises(ValueError, match="Unsafe manifest reference"):
+            safe_manifest_ref(str(tmp_path), "")
+
+    def test_dot_dot_filename_blocked(self, tmp_path):
+        from app.path_safety import safe_manifest_ref
+
+        with pytest.raises(ValueError, match="Unsafe manifest reference"):
+            safe_manifest_ref(str(tmp_path), "..")
+
+
 # ── Test fixtures ──
 
 
