@@ -1191,6 +1191,139 @@ class TestThemePathTraversal:
         assert mod.theme_data is None
 
 
+class TestContributesPathTraversal:
+    """All contributes-based file references must reject traversal."""
+
+    def test_collector_traversal_blocked(self, tmp_path):
+        """Collector spec with traversal filename must be rejected."""
+        from app.module_loader import load_module_collector
+
+        evil_file = tmp_path / "evil.py"
+        evil_file.write_text("class Evil: pass")
+
+        mod_dir = tmp_path / "mymod"
+        mod_dir.mkdir()
+
+        with pytest.raises(ValueError, match="Unsafe manifest reference"):
+            load_module_collector("test.mod", str(mod_dir), "../evil.py:Evil")
+
+    def test_routes_traversal_blocked(self, tmp_path):
+        """Routes file with traversal must be rejected."""
+        from app.module_loader import load_module_routes
+        from flask import Flask
+
+        evil_file = tmp_path / "evil_routes.py"
+        evil_file.write_text("EXECUTED = True")
+
+        mod_dir = tmp_path / "mymod"
+        mod_dir.mkdir()
+
+        app = Flask(__name__)
+        with pytest.raises(ValueError, match="Unsafe manifest reference"):
+            load_module_routes(app, "test.mod", str(mod_dir), "../evil_routes.py")
+
+    def test_thresholds_traversal_blocked(self, tmp_path):
+        """Thresholds with traversal filename must fail to load."""
+        from app.module_loader import ModuleLoader
+
+        stolen = tmp_path / "stolen.json"
+        stolen.write_text(json.dumps({
+            "downstream_power": {"_default": [0, 10]},
+            "upstream_power": {"_default": [35, 55]},
+            "snr": {"_default": [30, 100]},
+        }))
+        mod_dir = tmp_path / "evilmod"
+        mod_dir.mkdir()
+        (mod_dir / "manifest.json").write_text(json.dumps({
+            "id": "test.evilmod",
+            "name": "Evil",
+            "description": "d",
+            "version": "1.0.0",
+            "author": "Test",
+            "minAppVersion": "2026.2",
+            "type": "analysis",
+            "contributes": {"thresholds": "../stolen.json"},
+        }))
+
+        app = Flask(__name__)
+        app.config["TESTING"] = True
+        loader = ModuleLoader(app, search_paths=[str(tmp_path)])
+        loader.load_all()
+
+        mod = next(m for m in loader.get_modules() if m.id == "test.evilmod")
+        assert mod.error is not None
+        assert "unsafe manifest reference" in mod.error.lower()
+
+    def test_i18n_traversal_blocked(self, tmp_path):
+        """i18n with traversal must be rejected."""
+        mod_dir = tmp_path / "i18nmod"
+        mod_dir.mkdir()
+        (mod_dir / "manifest.json").write_text(json.dumps({
+            "id": "test.i18nmod",
+            "name": "i18n Evil",
+            "description": "d",
+            "version": "1.0.0",
+            "author": "Test",
+            "minAppVersion": "2026.2",
+            "type": "integration",
+            "contributes": {"i18n": "../../etc"},
+        }))
+
+        app = Flask(__name__)
+        app.config["TESTING"] = True
+        loader = ModuleLoader(app, search_paths=[str(tmp_path)])
+        loader.load_all()
+
+        mod = next(m for m in loader.get_modules() if m.id == "test.i18nmod")
+        assert mod.error is not None
+        assert "unsafe manifest subpath" in mod.error.lower()
+
+    def test_publisher_traversal_blocked(self, tmp_path):
+        """Publisher spec with traversal filename must be rejected."""
+        from app.module_loader import load_module_publisher
+
+        mod_dir = tmp_path / "mymod"
+        mod_dir.mkdir()
+
+        with pytest.raises(ValueError, match="Unsafe manifest reference"):
+            load_module_publisher("test.mod", str(mod_dir), "../evil.py:Evil")
+
+    def test_driver_traversal_blocked(self, tmp_path):
+        """Driver spec with traversal filename must be rejected."""
+        from app.module_loader import load_module_driver
+
+        mod_dir = tmp_path / "mymod"
+        mod_dir.mkdir()
+
+        with pytest.raises(ValueError, match="Unsafe manifest reference"):
+            load_module_driver("test.mod", str(mod_dir), "../evil.py:Evil")
+
+    def test_static_traversal_blocked(self, tmp_path):
+        """Static dir with traversal must be rejected."""
+        mod_dir = tmp_path / "staticmod"
+        mod_dir.mkdir()
+        (mod_dir / "manifest.json").write_text(json.dumps({
+            "id": "test.staticmod",
+            "name": "Static Evil",
+            "description": "d",
+            "version": "1.0.0",
+            "author": "Test",
+            "minAppVersion": "2026.2",
+            "type": "integration",
+            "contributes": {"static": "../../../var/www", "routes": "routes.py"},
+        }))
+        (mod_dir / "routes.py").write_text("")
+
+        app = Flask(__name__)
+        app.config["TESTING"] = True
+        loader = ModuleLoader(app, search_paths=[str(tmp_path)])
+        loader.load_all()
+
+        mod = next(m for m in loader.get_modules() if m.id == "test.staticmod")
+        assert mod.error is not None
+        assert "unsafe manifest subpath" in mod.error.lower()
+
+
 def test_driver_in_valid_contributes():
     from app.module_loader import VALID_CONTRIBUTES
     assert "driver" in VALID_CONTRIBUTES

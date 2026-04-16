@@ -14,7 +14,7 @@ from flask import send_from_directory
 from app import analyzer as _analyzer
 from app import config as _cfg
 from app.i18n import _TRANSLATIONS
-from app.path_safety import safe_manifest_ref
+from app.path_safety import safe_manifest_ref, safe_manifest_subpath
 
 log = logging.getLogger("docsis.modules")
 
@@ -270,7 +270,7 @@ def load_module_routes(app, module_id: str, module_path: str, routes_file: str, 
     Community modules (builtin=False) are checked for route conflicts
     with core endpoints before registration.
     """
-    routes_path = os.path.join(module_path, routes_file)
+    routes_path = safe_manifest_ref(module_path, routes_file)
     if not os.path.isfile(routes_path):
         log.warning("Module '%s': routes file not found: %s", module_id, routes_path)
         return
@@ -347,7 +347,7 @@ def load_module_collector(module_id: str, module_path: str, spec: str):
         return None
 
     filename, class_name = spec.rsplit(":", 1)
-    file_path = os.path.join(module_path, filename)
+    file_path = safe_manifest_ref(module_path, filename)
 
     if not os.path.isfile(file_path):
         log.warning("Module '%s': collector file not found: %s", module_id, file_path)
@@ -392,7 +392,7 @@ def load_module_publisher(module_id: str, module_path: str, spec: str):
         return None
 
     filename, class_name = spec.rsplit(":", 1)
-    file_path = os.path.join(module_path, filename)
+    file_path = safe_manifest_ref(module_path, filename)
 
     if not os.path.isfile(file_path):
         log.warning("Module '%s': publisher file not found: %s", module_id, file_path)
@@ -437,7 +437,7 @@ def load_module_driver(module_id: str, module_path: str, spec: str):
         return None
 
     filename, class_name = spec.rsplit(":", 1)
-    file_path = os.path.join(module_path, filename)
+    file_path = safe_manifest_ref(module_path, filename)
 
     if not os.path.isfile(file_path):
         log.warning("Module '%s': driver file not found: %s", module_id, file_path)
@@ -468,7 +468,7 @@ def load_module_driver(module_id: str, module_path: str, spec: str):
 
 def setup_module_static(app, module_id: str, module_path: str, static_subdir: str) -> None:
     """Mount a module's static directory at /modules/<id>/static/."""
-    static_dir = os.path.join(module_path, static_subdir.rstrip("/"))
+    static_dir = safe_manifest_subpath(module_path, static_subdir.rstrip("/"))
     if not os.path.isdir(static_dir):
         log.debug("Module '%s': no static directory at %s", module_id, static_dir)
         return
@@ -503,7 +503,7 @@ def setup_module_templates(
         rel_path = contributes.get(key)
         if not rel_path:
             continue
-        abs_path = os.path.join(module_path, rel_path)
+        abs_path = safe_manifest_subpath(module_path, rel_path)
         if os.path.isfile(abs_path):
             # Store just the filename for Jinja2 include (ChoiceLoader resolves it)
             resolved[key] = os.path.basename(abs_path)
@@ -636,7 +636,7 @@ class ModuleLoader:
 
         # i18n
         if "i18n" in c:
-            i18n_dir = os.path.join(mod.path, c["i18n"].rstrip("/"))
+            i18n_dir = safe_manifest_subpath(mod.path, c["i18n"].rstrip("/"))
             merge_module_i18n(mod.id, i18n_dir)
 
         # Routes (Blueprint)
@@ -664,7 +664,7 @@ class ModuleLoader:
 
         # Thresholds
         if "thresholds" in c:
-            thresholds_path = os.path.join(mod.path, c["thresholds"])
+            thresholds_path = safe_manifest_ref(mod.path, c["thresholds"])
             if not os.path.isfile(thresholds_path):
                 raise ManifestError(f"Thresholds file not found: {c['thresholds']}")
             with open(thresholds_path, "r", encoding="utf-8") as f:
@@ -687,7 +687,7 @@ class ModuleLoader:
 
         # Convention-based asset detection
         static_subdir = c.get("static", "static/").rstrip("/")
-        static_dir = os.path.join(mod.path, static_subdir)
+        static_dir = safe_manifest_subpath(mod.path, static_subdir)
         if os.path.isdir(static_dir):
             mod.has_css = os.path.isfile(os.path.join(static_dir, "style.css"))
             mod.has_js = os.path.isfile(os.path.join(static_dir, "main.js"))

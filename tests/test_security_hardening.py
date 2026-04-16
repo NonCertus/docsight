@@ -1,6 +1,7 @@
 """Tests for security hardening: proxy trust, theme SSRF, module isolation."""
 
 import json
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -258,6 +259,52 @@ class TestSafeChildFile:
 
         with pytest.raises(ValueError, match="not in allowlist"):
             safe_child_file(str(tmp_path), "../../../etc/passwd")
+
+
+class TestSafeManifestSubpath:
+    """safe_manifest_subpath must allow subdirs but block traversal."""
+
+    def test_simple_subdir_allowed(self, tmp_path):
+        from app.path_safety import safe_manifest_subpath
+
+        result = safe_manifest_subpath(str(tmp_path), "static")
+        assert result.endswith("static")
+
+    def test_nested_path_allowed(self, tmp_path):
+        from app.path_safety import safe_manifest_subpath
+
+        result = safe_manifest_subpath(str(tmp_path), "templates/tab.html")
+        assert result.endswith("templates/tab.html")
+
+    def test_traversal_blocked(self, tmp_path):
+        from app.path_safety import safe_manifest_subpath
+
+        with pytest.raises(ValueError, match="Unsafe manifest subpath"):
+            safe_manifest_subpath(str(tmp_path), "../../../etc")
+
+    def test_dotdot_in_middle_blocked(self, tmp_path):
+        from app.path_safety import safe_manifest_subpath
+
+        with pytest.raises(ValueError, match="Unsafe manifest subpath"):
+            safe_manifest_subpath(str(tmp_path), "templates/../../../etc/passwd")
+
+    def test_backslash_blocked(self, tmp_path):
+        from app.path_safety import safe_manifest_subpath
+
+        with pytest.raises(ValueError, match="Unsafe manifest subpath"):
+            safe_manifest_subpath(str(tmp_path), "templates\\..\\..\\etc")
+
+    def test_empty_blocked(self, tmp_path):
+        from app.path_safety import safe_manifest_subpath
+
+        with pytest.raises(ValueError, match="Unsafe manifest subpath"):
+            safe_manifest_subpath(str(tmp_path), "")
+
+    def test_dot_resolves_to_base(self, tmp_path):
+        from app.path_safety import safe_manifest_subpath
+
+        result = safe_manifest_subpath(str(tmp_path), ".")
+        assert os.path.realpath(result) == os.path.realpath(str(tmp_path))
 
 
 class TestSafeManifestRef:

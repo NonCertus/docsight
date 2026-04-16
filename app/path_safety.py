@@ -54,6 +54,38 @@ def safe_child_file(validated_dir: str, filename: str) -> str:
     return real_candidate
 
 
+def safe_manifest_subpath(module_dir: str, subpath: str) -> str:
+    """Resolve a manifest-supplied sub-path safely inside *module_dir*.
+
+    Accepts paths with forward slashes (e.g. ``templates/tab.html``,
+    ``i18n/``) but rejects ``..`` components and backslashes.
+
+    Use this for ``contributes`` values that legitimately contain
+    subdirectory references (templates, i18n directories, static dirs).
+
+    Raises ``ValueError`` if the path contains traversal sequences or
+    escapes the module directory.
+    """
+    if not isinstance(subpath, str) or not subpath:
+        raise ValueError(f"Unsafe manifest subpath: {subpath!r}")
+
+    # Reject traversal components and backslashes
+    if ".." in subpath.split("/") or "\\" in subpath:
+        raise ValueError(
+            f"Unsafe manifest subpath: {subpath!r} "
+            "(must not contain '..' or backslashes)"
+        )
+
+    candidate = os.path.join(module_dir, subpath)
+    real_base = os.path.realpath(module_dir)
+    real_candidate = os.path.realpath(candidate)
+
+    if not real_candidate.startswith(real_base + os.sep) and real_candidate != real_base:
+        raise ValueError(f"Manifest subpath escapes module directory: {subpath!r}")
+
+    return real_candidate
+
+
 def safe_manifest_ref(module_dir: str, filename: str) -> str:
     """Resolve a manifest-supplied filename safely inside *module_dir*.
 
