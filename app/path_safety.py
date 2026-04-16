@@ -1,0 +1,53 @@
+"""Shared path-sanitization helpers for module/theme installation."""
+
+import os
+import re
+
+ID_PATTERN = re.compile(r"^[a-z][a-z0-9_.]+$")
+
+_ALLOWED_CHILD_FILES = frozenset({"manifest.json", "theme.json"})
+
+
+def safe_child_path(base_dir: str, child_name: str) -> str:
+    """Resolve *child_name* inside *base_dir* safely.
+
+    Validates *child_name* against ``ID_PATTERN`` (lowercase alphanum,
+    dots, underscores) and ensures the resolved path is actually inside
+    *base_dir* via ``os.path.commonpath``.
+
+    Returns the resolved absolute path on success.
+    Raises ``ValueError`` for any invalid or escaping name.
+    """
+    if not isinstance(child_name, str) or not ID_PATTERN.match(child_name):
+        raise ValueError(f"Invalid ID: {child_name!r}")
+
+    candidate = os.path.join(base_dir, child_name)
+    real_base = os.path.realpath(base_dir)
+    real_candidate = os.path.realpath(candidate)
+
+    if os.path.commonpath([real_base, real_candidate]) != real_base:
+        raise ValueError(f"Path escapes base directory: {child_name!r}")
+
+    return real_candidate
+
+
+def safe_child_file(validated_dir: str, filename: str) -> str:
+    """Return the path to a known child file inside a validated directory.
+
+    *validated_dir* must already be the output of :func:`safe_child_path`.
+    *filename* must be in the ``_ALLOWED_CHILD_FILES`` allowlist.
+
+    Raises ``ValueError`` if *filename* is not allowed or the resolved
+    path escapes *validated_dir*.
+    """
+    if filename not in _ALLOWED_CHILD_FILES:
+        raise ValueError(f"Filename not in allowlist: {filename!r}")
+
+    candidate = os.path.join(validated_dir, filename)
+    real_dir = os.path.realpath(validated_dir)
+    real_candidate = os.path.realpath(candidate)
+
+    if os.path.commonpath([real_dir, real_candidate]) != real_dir:
+        raise ValueError(f"Child file escapes directory: {filename!r}")
+
+    return real_candidate

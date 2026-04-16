@@ -9,6 +9,7 @@ from .module_download import (
     download_github_directory,
     is_trusted_url,
 )
+from .path_safety import safe_child_file
 
 log = logging.getLogger("docsis.themes")
 
@@ -30,8 +31,8 @@ def download_theme(download_url: str, target_dir: str, timeout: int = 30) -> boo
     if not download_github_directory(download_url, target_dir, timeout):
         return False
 
-    manifest_path = os.path.join(target_dir, "manifest.json")
-    theme_path = os.path.join(target_dir, "theme.json")
+    manifest_path = safe_child_file(target_dir, "manifest.json")
+    theme_path = safe_child_file(target_dir, "theme.json")
     if not os.path.isfile(manifest_path) or not os.path.isfile(theme_path):
         log.error("Downloaded theme missing manifest.json or theme.json")
         shutil.rmtree(target_dir, ignore_errors=True)

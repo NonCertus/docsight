@@ -9,60 +9,13 @@ from flask import Blueprint, jsonify, request
 
 from app.module_download import download_github_directory, fetch_registry as fetch_module_registry
 from app.module_loader import ID_PATTERN, validate_manifest
+from app.path_safety import safe_child_file, safe_child_path
 from app.theme_registry import download_theme, fetch_registry as fetch_theme_registry
 from app.web import get_config_manager, get_module_loader, require_auth
 
 log = logging.getLogger("docsis.modules")
 
 modules_bp = Blueprint("modules_bp", __name__)
-
-
-def _safe_child_path(base_dir: str, child_name: str) -> str:
-    """Resolve *child_name* inside *base_dir* safely.
-
-    Validates *child_name* against ``ID_PATTERN`` (lowercase alphanum,
-    dots, underscores) and ensures the resolved path is actually inside
-    *base_dir* via ``os.path.commonpath``.
-
-    Returns the resolved absolute path on success.
-    Raises ``ValueError`` for any invalid or escaping name.
-    """
-    if not isinstance(child_name, str) or not ID_PATTERN.match(child_name):
-        raise ValueError(f"Invalid ID: {child_name!r}")
-
-    candidate = os.path.join(base_dir, child_name)
-    real_base = os.path.realpath(base_dir)
-    real_candidate = os.path.realpath(candidate)
-
-    if os.path.commonpath([real_base, real_candidate]) != real_base:
-        raise ValueError(f"Path escapes base directory: {child_name!r}")
-
-    return real_candidate
-
-
-_ALLOWED_CHILD_FILES = frozenset({"manifest.json"})
-
-
-def _safe_child_file(validated_dir: str, filename: str) -> str:
-    """Return the path to a known child file inside a validated directory.
-
-    *validated_dir* must already be the output of :func:`_safe_child_path`.
-    *filename* must be in the ``_ALLOWED_CHILD_FILES`` allowlist.
-
-    Raises ``ValueError`` if *filename* is not allowed or the resolved
-    path escapes *validated_dir*.
-    """
-    if filename not in _ALLOWED_CHILD_FILES:
-        raise ValueError(f"Filename not in allowlist: {filename!r}")
-
-    candidate = os.path.join(validated_dir, filename)
-    real_dir = os.path.realpath(validated_dir)
-    real_candidate = os.path.realpath(candidate)
-
-    if os.path.commonpath([real_dir, real_candidate]) != real_dir:
-        raise ValueError(f"Child file escapes directory: {filename!r}")
-
-    return real_candidate
 
 
 def _serialize_module(mod):
@@ -245,7 +198,7 @@ def api_themes_install():
     modules_dir = os.environ.get("MODULES_DIR", "/modules")
 
     try:
-        theme_dir = _safe_child_path(modules_dir, theme_id.replace(".", "_"))
+        theme_dir = safe_child_path(modules_dir, theme_id.replace(".", "_"))
     except ValueError:
         return jsonify({"success": False, "error": "Invalid theme ID"}), 400
 
@@ -321,7 +274,7 @@ def api_modules_install():
     modules_dir = _get_modules_dir()
 
     try:
-        target_dir = _safe_child_path(modules_dir, mod_id)
+        target_dir = safe_child_path(modules_dir, mod_id)
     except ValueError:
         return jsonify({"success": False, "error": "Invalid module ID"}), 400
 
@@ -346,7 +299,7 @@ def api_modules_install():
         return jsonify({"success": False, "error": "Download failed"}), 500
 
     # Post-download validation
-    manifest_path = _safe_child_file(target_dir, "manifest.json")
+    manifest_path = safe_child_file(target_dir, "manifest.json")
     if not os.path.isfile(manifest_path):
         shutil.rmtree(target_dir, ignore_errors=True)
         return jsonify({"success": False, "error": "Downloaded module missing manifest.json"}), 500

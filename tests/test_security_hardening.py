@@ -199,6 +199,67 @@ class TestCommunityRouteProtection:
         assert not in_protected and not prefix_blocked
 
 
+# ── Path safety helpers ──
+
+
+class TestSafeChildPath:
+    """safe_child_path must reject traversal and invalid IDs."""
+
+    def test_valid_id(self, tmp_path):
+        from app.path_safety import safe_child_path
+
+        base = str(tmp_path)
+        result = safe_child_path(base, "my_module.v2")
+        assert result.startswith(str(tmp_path.resolve()))
+        assert result.endswith("my_module.v2")
+
+    def test_rejects_traversal(self, tmp_path):
+        from app.path_safety import safe_child_path
+
+        with pytest.raises(ValueError, match="Invalid ID"):
+            safe_child_path(str(tmp_path), "../etc")
+
+    def test_rejects_uppercase(self, tmp_path):
+        from app.path_safety import safe_child_path
+
+        with pytest.raises(ValueError, match="Invalid ID"):
+            safe_child_path(str(tmp_path), "BadModule")
+
+    def test_rejects_slash(self, tmp_path):
+        from app.path_safety import safe_child_path
+
+        with pytest.raises(ValueError, match="Invalid ID"):
+            safe_child_path(str(tmp_path), "a/b")
+
+
+class TestSafeChildFile:
+    """safe_child_file must only allow allowlisted filenames."""
+
+    def test_manifest_allowed(self, tmp_path):
+        from app.path_safety import safe_child_file
+
+        result = safe_child_file(str(tmp_path), "manifest.json")
+        assert result.endswith("manifest.json")
+
+    def test_theme_allowed(self, tmp_path):
+        from app.path_safety import safe_child_file
+
+        result = safe_child_file(str(tmp_path), "theme.json")
+        assert result.endswith("theme.json")
+
+    def test_rejects_unlisted_file(self, tmp_path):
+        from app.path_safety import safe_child_file
+
+        with pytest.raises(ValueError, match="not in allowlist"):
+            safe_child_file(str(tmp_path), "evil.py")
+
+    def test_rejects_traversal_filename(self, tmp_path):
+        from app.path_safety import safe_child_file
+
+        with pytest.raises(ValueError, match="not in allowlist"):
+            safe_child_file(str(tmp_path), "../../../etc/passwd")
+
+
 # ── Test fixtures ──
 
 
