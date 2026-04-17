@@ -752,9 +752,14 @@ function _setupCorrelationTooltip(overlay, octx) {
         // Convert mouseX to timestamp
         var tHover = st.tMin + (mouseX - st.pad.left) / st.plotW * (st.tMax - st.tMin);
 
-        // Find nearest modem point
+        // Find nearest modem point whenever any modem-derived series is visible.
+        // Previously gated on SNR alone, which hid TX Power / DS Power / Errors from
+        // the tooltip when SNR was toggled off (see issue #331). Keeping a multi-flag
+        // guard ensures displayTs and the table highlight do not snap to a modem
+        // timestamp when every modem series has been hidden.
+        var anyModemVisible = _corrVisible.snr || _corrVisible.txPower || _corrVisible.dsPower || _corrVisible.errors;
         var nearestModem = null;
-        if (st.modem.length > 0 && _corrVisible.snr) {
+        if (st.modem.length > 0 && anyModemVisible) {
             var bestDist = Infinity;
             for (var i = 0; i < st.modem.length; i++) {
                 var ts = new Date(st.modem[i].timestamp).getTime();
