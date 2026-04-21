@@ -388,6 +388,66 @@ class TestDeviceInfoMetrics:
         lines = out.splitlines()
         assert any("# TYPE docsight_device_info" in l for l in lines)
 
+    def test_device_info_excludes_mutable_fields(self):
+        info = {
+            "model": "TG6442VF",
+            "sw_version": "1.0",
+            "docsis_status": "online",
+            "reboot_reason": "power on",
+        }
+        out = format_metrics(None, info, None, 0.0)
+        device_info_lines = [
+            line for line in out.splitlines()
+            if line.startswith("docsight_device_info{")
+        ]
+        assert device_info_lines, "docsight_device_info line missing"
+        joined = "\n".join(device_info_lines)
+        assert "docsis_status" not in joined
+        assert "reboot_reason" not in joined
+
+    def test_docsis_online_is_one_when_online(self):
+        info = {"model": "TG6442VF", "docsis_status": "online"}
+        out = format_metrics(None, info, None, 0.0)
+        assert _has_metric(out, "docsight_docsis_online 1")
+
+    def test_docsis_online_is_zero_for_other_statuses(self):
+        for status in ("offline", "scanning frequencies", "firmware update"):
+            info = {"model": "TG6442VF", "docsis_status": status}
+            out = format_metrics(None, info, None, 0.0)
+            assert _has_metric(out, "docsight_docsis_online 0"), f"status={status}"
+
+    def test_docsis_online_omitted_when_status_missing(self):
+        info = {"model": "TG6442VF"}
+        out = format_metrics(None, info, None, 0.0)
+        assert not _has_metric_approx(out, "docsight_docsis_online")
+
+    def test_last_reboot_reason_info_emitted_with_label(self):
+        info = {"model": "TG6442VF", "reboot_reason": "power on"}
+        out = format_metrics(None, info, None, 0.0)
+        assert _has_metric(out, 'docsight_last_reboot_reason_info{reason="power on"} 1')
+
+    def test_last_reboot_reason_info_omitted_when_missing(self):
+        info = {"model": "TG6442VF"}
+        out = format_metrics(None, info, None, 0.0)
+        assert not _has_metric_approx(out, "docsight_last_reboot_reason_info")
+
+    def test_label_values_are_escaped(self):
+        """Backslash, double-quote, and newline in label values must be
+        escaped per the Prometheus text exposition spec."""
+        info = {
+            "model": 'Model "Gamma"\\beta',
+            "reboot_reason": "line1\nline2",
+        }
+        out = format_metrics(None, info, None, 0.0)
+        assert _has_metric(
+            out,
+            'docsight_device_info{model="Model \\"Gamma\\"\\\\beta"} 1',
+        )
+        assert _has_metric(
+            out,
+            'docsight_last_reboot_reason_info{reason="line1\\nline2"} 1',
+        )
+
 
 # ---------------------------------------------------------------------------
 # Connection info metrics
