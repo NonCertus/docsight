@@ -465,12 +465,14 @@ class TestModemCollector:
         event_detector.check.assert_called_once()
         assert web.update_state.call_count >= 3  # device_info, connection_info, analysis
 
-    def test_collect_caches_device_info(self):
+    def test_collect_refreshes_device_info_caches_connection_info(self):
         c, driver, *_ = self._make_collector()
         c.collect()
         c.collect()
-        # device_info and connection_info only fetched once
-        assert driver.get_device_info.call_count == 1
+        # device_info is refreshed every collect so mutable fields
+        # (docsis_status, reboot_reason, uptime_seconds) stay current.
+        # connection_info is static and stays cached after first fetch.
+        assert driver.get_device_info.call_count == 2
         assert driver.get_connection_info.call_count == 1
 
     def test_collect_with_events(self):

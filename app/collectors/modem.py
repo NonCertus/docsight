@@ -36,14 +36,16 @@ class ModemCollector(Collector):
     def collect(self) -> CollectorResult:
         self._driver.login()
 
-        if self._device_info is None:
-            self._device_info = self._driver.get_device_info()
+        first_fetch = self._device_info is None
+        self._device_info = self._driver.get_device_info()
+        if first_fetch:
             log.info(
-                "Model: %s (%s)",
+                "Model: %s (%s, %s)",
                 self._device_info.get("model", "?"),
                 self._device_info.get("sw_version", "?"),
+                self._device_info.get("docsis_status", "?"),
             )
-            self._web.update_state(device_info=self._device_info)
+        self._web.update_state(device_info=self._device_info)
 
         if self._connection_info is None:
             self._connection_info = self._driver.get_connection_info()

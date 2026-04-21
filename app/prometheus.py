@@ -52,13 +52,27 @@ def _channel_labels(channel):
     return labels
 
 
+def _escape_label_value(value):
+    """Escape a Prometheus label value per the text exposition spec:
+    backslash, double-quote, and newline."""
+    return (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+    )
+
+
+def _format_labels(labels):
+    return ",".join(f'{k}="{_escape_label_value(v)}"' for k, v in labels.items())
+
+
 def _metric(lines, help_text, metric_type, name, value, labels=None):
     """Append HELP, TYPE, and a single value line to lines list."""
     lines.append(f"# HELP {name} {help_text}")
     lines.append(f"# TYPE {name} {metric_type}")
     if labels:
-        label_str = ",".join(f'{k}="{v}"' for k, v in labels.items())
-        lines.append(f"{name}{{{label_str}}} {value}")
+        lines.append(f"{name}{{{_format_labels(labels)}}} {value}")
     else:
         lines.append(f"{name} {value}")
 
@@ -72,8 +86,7 @@ def _metric_family_open(lines, help_text, metric_type, name):
 def _metric_value(lines, name, value, labels=None):
     """Append a single value line for an already-opened metric family."""
     if labels:
-        label_str = ",".join(f'{k}="{v}"' for k, v in labels.items())
-        lines.append(f"{name}{{{label_str}}} {value}")
+        lines.append(f"{name}{{{_format_labels(labels)}}} {value}")
     else:
         lines.append(f"{name} {value}")
 
@@ -228,16 +241,46 @@ def format_metrics(
 
     # --- Device info ---
     if device_info is not None:
-        model = device_info.get("model", "")
-        sw_version = device_info.get("sw_version", "")
+        # docsight_device_info holds only immutable identifying labels.
+        # Mutable fields (docsis_status, reboot_reason) are exposed as
+        # separate metrics below so they refresh on every scrape.
+        labels = {
+            "model": device_info.get("model"),
+            "hw_version": device_info.get("hw_version"),
+            "sw_version": device_info.get("sw_version"),
+        }
+        labels = {k: v for k, v in labels.items() if v not in (None, "")}
         _metric(
             lines,
-            "Device information (model, firmware version)",
+            "Device identification (model, hw/sw version)",
             "gauge",
             "docsight_device_info",
             1,
-            {"model": model, "sw_version": sw_version},
+            labels,
         )
+
+        docsis_status = device_info.get("docsis_status")
+        if docsis_status not in (None, ""):
+            _metric(
+                lines,
+                "1 when the modem reports DOCSIS online, 0 otherwise",
+                "gauge",
+                "docsight_docsis_online",
+                1 if str(docsis_status).lower() == "online" else 0,
+            )
+
+        reboot_reason = device_info.get("reboot_reason")
+        if reboot_reason not in (None, ""):
+            _metric(
+                lines,
+                "Reason reported for the last modem reboot (label carries the value, metric is always 1)",
+                "gauge",
+                "docsight_last_reboot_reason_info",
+                1,
+                {"reason": reboot_reason},
+            )
+
+        # dynamic numeric metric: uptime
         uptime = device_info.get("uptime_seconds")
         if uptime is not None:
             _metric(
