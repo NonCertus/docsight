@@ -888,9 +888,9 @@
   "hw_version_tooltip": "Hardware Version/Revision",
   "sw_version_tooltip": "Software/Firmware Version",
   "docsis_status_tooltip": "DOCSIS Verbindungsstatus",
-  "uptime_tooltip": "Betriebszeit",
+  "uptime_tooltip": "Zeit seit dem letzten Neustart",
   "reboot_reason_tooltip": "Grund für den letzten Neustart",
-  "channel_count_tooltip": "# der Downstream/Upstream DOCSIS Kanäle",
-  "wan_ipv4_tooltip": "WAN IPv4 Adresse",
-  "wan_ipv6_tooltip": "WAN IPv6 Adresse"
+  "channel_count_tooltip": "Anzahl der Downstream/Upstream DOCSIS-Kanäle",
+  "wan_ipv4_tooltip": "WAN IPv4-Adresse",
+  "wan_ipv6_tooltip": "WAN IPv6-Adresse"
 }
