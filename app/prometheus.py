@@ -228,16 +228,29 @@ def format_metrics(
 
     # --- Device info ---
     if device_info is not None:
-        model = device_info.get("model", "")
-        sw_version = device_info.get("sw_version", "")
+        # build labels
+        labels = {
+            "model": device_info.get("model"),
+            "hw_version": device_info.get("hw_version"),
+            "sw_version": device_info.get("sw_version"),
+            "docsis_status": device_info.get("docsis_status"),
+            "reboot_reason": device_info.get("reboot_reason"),
+        }
+
+        # remove empty / None values
+        labels = {k: v for k, v in labels.items() if v not in (None, "")}
+
+        # emit metric once
         _metric(
             lines,
-            "Device information (model, firmware version)",
+            "Device information (model, hw/sw version, DOCSIS status, reboot reason)",
             "gauge",
             "docsight_device_info",
             1,
-            {"model": model, "sw_version": sw_version},
+            labels,
         )
+
+        # dynamic numeric metric: uptime
         uptime = device_info.get("uptime_seconds")
         if uptime is not None:
             _metric(
