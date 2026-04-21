@@ -409,8 +409,7 @@ class VodafoneStationDriver(ModemDriver):
             }
 
     def _get_device_info_tg(self) -> DeviceInfo:
-        """TG: Retrieve device info from HTML"""
-        import re
+        """TG: Retrieve device info from HTML."""
 
         def fetch_status_pages():
             r1 = self._session.get(f"{self._url}/php/status_status_data.php", timeout=5)
@@ -463,15 +462,34 @@ class VodafoneStationDriver(ModemDriver):
                 "uptime_seconds": uptime_seconds,
             }
 
-        # actual execution flow
-        text, text2 = fetch_status_pages()
-        data = parse_status(text, text2)
-
-        return {
+        fallback: DeviceInfo = {
             "manufacturer": "CommScope/ARRIS",
             "model": "Vodafone Station (TG6442VF/TG3442DE)",
-            **data
         }
+
+        try:
+            text, text2 = fetch_status_pages()
+        except requests.RequestException as e:
+            status_code = getattr(getattr(e, "response", None), "status_code", None)
+            if status_code in (400, 401, 403):
+                log.warning(
+                    "TG device info request failed (%s), re-authenticating and retrying",
+                    status_code,
+                )
+                self._invalidate_tg_session()
+                try:
+                    self._login_tg()
+                    text, text2 = fetch_status_pages()
+                except Exception as retry_err:
+                    log.warning("TG device info retrieval failed after retry: %s", retry_err)
+                    self._invalidate_tg_session()
+                    return fallback
+            else:
+                log.warning("TG device info retrieval failed: %s", e)
+                self._invalidate_tg_session()
+                return fallback
+
+        return {**fallback, **parse_status(text, text2)}
     
     def _invalidate_cga_session(self) -> None:
         """Clear CGA session state and session-level headers."""
