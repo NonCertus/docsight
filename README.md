@@ -28,7 +28,13 @@
   <strong>Self-hosted</strong> • <strong>Demo mode</strong> • <strong>Complaint-ready exports</strong> • <strong>16 modem families</strong> • <strong>Home Assistant + MQTT</strong> • <strong>4 languages</strong> • <strong>MIT licensed</strong>
 </p>
 
-![Dashboard](docs/screenshots/dashboard-dark.png)
+<p align="center">
+  <img src="docs/screenshots/readme-hero-evidence.png" alt="DOCSight README hero" width="100%" />
+</p>
+
+<p align="center">
+  <em>A self-hosted evidence layer for broadband issues: live diagnostics, long-term signal history, incident tracking, and complaint-ready exports when your ISP keeps saying everything looks fine.</em>
+</p>
 
 ---
 
