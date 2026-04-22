@@ -37,11 +37,11 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/readme-hero-evidence.png" alt="DOCSight README hero" width="100%" />
+  <img src="docs/screenshots/readme-hero-evidence.png" alt="DOCSight dashboard" width="100%" />
 </p>
 
 <p align="center">
-  <em>A self-hosted DOCSIS evidence layer for cable internet problems: signal monitoring, long-term performance history, incident tracking, and complaint-ready exports when your ISP keeps waving away signal faults and bad performance.</em>
+  <em>DOCSIS signal monitoring, long-term performance history, incident tracking, and complaint-ready exports in one self-hosted dashboard.</em>
 </p>
 
 ---
