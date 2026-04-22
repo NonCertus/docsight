@@ -5,6 +5,14 @@
 <h1 align="center">DOCSight</h1>
 
 <p align="center">
+  <a href="#get-started">Get Started</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="#supported-hardware">Supported Hardware</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="https://github.com/itsDNNS/docsight/wiki">Wiki</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="https://github.com/itsDNNS/docsight/releases">Releases</a>&nbsp;&nbsp;&bull;&nbsp;&nbsp;
+  <a href="https://github.com/itsDNNS/docsight/wiki/Roadmap">Roadmap</a>
+</p>
+
+<p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/itsDNNS/docsight" alt="License"></a>
   <a href="https://github.com/itsDNNS/docsight/pkgs/container/docsight"><img src="https://img.shields.io/github/v/tag/itsDNNS/docsight?label=version" alt="Version"></a>
   <a href="https://github.com/itsDNNS/docsight/stargazers"><img src="https://img.shields.io/github/stars/itsDNNS/docsight?style=flat" alt="Stars"></a>
@@ -13,11 +21,11 @@
 </p>
 
 <p align="center">
-  <strong>Your ISP says everything is fine. DOCSight gives you the proof that it isn't.</strong>
+  <strong>Your ISP says everything is fine. DOCSight gives you the DOCSIS evidence that it isn't.</strong>
 </p>
 
 <p align="center">
-  DOCSight continuously monitors your connection, catches the issues your ISP misses in one-off snapshots, and builds a timestamped evidence trail you can use, from live diagnostics and trend charts to incident reports and complaint-ready exports.
+  DOCSight monitors DOCSIS cable signal health, tracks bad performance over time, and turns recurring slowdowns, instability, and outages into evidence you can actually use.
 </p>
 
 <p align="center">
@@ -33,7 +41,7 @@
 </p>
 
 <p align="center">
-  <em>A self-hosted evidence layer for broadband issues: live diagnostics, long-term signal history, incident tracking, and complaint-ready exports when your ISP keeps saying everything looks fine.</em>
+  <em>A self-hosted DOCSIS evidence layer for cable internet problems: signal monitoring, long-term performance history, incident tracking, and complaint-ready exports when your ISP keeps waving away signal faults and bad performance.</em>
 </p>
 
 ---
