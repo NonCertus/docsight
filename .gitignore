@@ -13,6 +13,7 @@ config.json
 # Docs (local only, not for public repo)
 docs/*.md
 docs/**/*.md
+docs/superpowers/
 
 # Internal development docs (belong in workspace, not repo)
 PHASE-*.md
