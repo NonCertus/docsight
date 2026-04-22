@@ -37,7 +37,7 @@
 </p>
 
 <p align="center">
-  <em>Correlation, incident history, and complaint-ready exports in one workflow.</em>
+  <em>See the patterns your ISP dismisses as random.</em>
 </p>
 
 ---
