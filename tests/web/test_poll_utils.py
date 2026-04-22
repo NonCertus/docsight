@@ -1,6 +1,7 @@
 """Tests for poll endpoint and small web utility helpers."""
 
 import json
+
 from app.web import format_k, init_config, app
 from app.config import ConfigManager
 
@@ -32,23 +33,16 @@ class TestPollEndpoint:
 
 
 class TestFormatK:
-    def test_large_number(self):
-        from app.web import format_k
-        assert format_k(132007) == "132k"
+    def test_required_contract_cases(self):
+        cases = [
+            ("1200000 formats to one-decimal millions", 1_200_000, "1.2M"),
+            ("132007 formats to whole thousands", 132_007, "132k"),
+            ("5929 keeps one decimal in thousands", 5_929, "5.9k"),
+            ("3000 trims trailing decimal", 3_000, "3k"),
+            ("42 stays unchanged", 42, "42"),
+            ("non-numeric values pass through", "bad", "bad"),
+        ]
 
-    def test_medium_number(self):
-        from app.web import format_k
-        assert format_k(5929) == "5.9k"
-
-    def test_round_thousand(self):
-        from app.web import format_k
-        assert format_k(3000) == "3k"
-
-    def test_small_number(self):
-        from app.web import format_k
-        assert format_k(42) == "42"
-
-    def test_invalid(self):
-        from app.web import format_k
-        assert format_k("bad") == "bad"
+        for label, value, expected in cases:
+            assert format_k(value) == expected, label
 
