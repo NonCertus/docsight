@@ -90,6 +90,8 @@ DEVICE_INFO_FULL = {
     "sw_version": "7.57",
     "manufacturer": "AVM",
     "uptime_seconds": 86400,
+    "wan_ipv4": "192.0.2.1",
+    "wan_ipv6": "2001:db8::1"
 }
 
 CONNECTION_INFO_FULL = {
@@ -430,6 +432,26 @@ class TestDeviceInfoMetrics:
         info = {"model": "TG6442VF"}
         out = format_metrics(None, info, None, 0.0)
         assert not _has_metric_approx(out, "docsight_last_reboot_reason_info")
+
+    def test_wan_ipv4_info_emitted_with_label(self):
+        info = {"model": "TG6442VF", "wan_ipv4": "192.0.2.1"}
+        out = format_metrics(None, info, None, 0.0)
+        assert _has_metric(out, 'docsight_wan_ipv4{wan_ipv4="192.0.2.1"} 1')
+
+    def test_wan_ipv4_info_emitted_with_label(self):
+        info = {"model": "TG6442VF"}
+        out = format_metrics(None, info, None, 0.0)
+        assert not _has_metric_approx(out, "docsight_wan_ipv4")
+
+    def test_wan_ipv6_info_emitted_with_label(self):
+        info = {"model": "TG6442VF", "wan_ipv6": "2001:db8::1"}
+        out = format_metrics(None, info, None, 0.0)
+        assert _has_metric(out, 'docsight_wan_ipv6{wan_ipv6="2001:db8::1"} 1')
+
+    def test_wan_ipv6_info_emitted_with_label(self):
+        info = {"model": "TG6442VF"}
+        out = format_metrics(None, info, None, 0.0)
+        assert not _has_metric_approx(out, "docsight_wan_ipv6")
 
     def test_label_values_are_escaped(self):
         """Backslash, double-quote, and newline in label values must be
