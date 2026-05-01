@@ -917,16 +917,6 @@ class VodafoneStationDriver(ModemDriver):
         """Normalize modulation string to analyzer format.
 
         Input: "256QAM", "64QAM", "OFDM", "4096QAM"
-        Output: "qam_256", "qam_64", "ofdm", "qam_4096"
+        Output: "256QAM", "64QAM", "OFDM", "4096QAM"
         """
-        if not modulation:
-            return ""
-        mod = modulation.upper().replace("-", "")
-        if "OFDMA" in mod:
-            return "ofdma"
-        if "OFDM" in mod:
-            return "ofdm"
-        if "QAM" in mod:
-            num = mod.replace("QAM", "")
-            return f"qam_{num}" if num else "qam"
-        return modulation.lower()
+        return modulation.strip() if modulation else ""

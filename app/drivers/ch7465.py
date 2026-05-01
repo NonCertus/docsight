@@ -311,14 +311,17 @@ class CH7465Driver(ModemDriver):
         """Normalize modulation string to analyzer format.
 
         Input: "256qam", "64qam", "qpsk", ..
-        Output: "qam_256", "qam_64", "qpsk", ..
+        Output: "256QAM", "64QAM", "QPSK", ..
         """
         if not modulation:
             return ""
-        mod = modulation.lower().replace("-", "")
+        mod = modulation.lower().replace("-", "").replace(" ", "").strip()        
+    
         if "qpsk" in mod:
-            return "qpsk"
+            return "QPSK"
+    
         if "qam" in mod:
-            num = mod.replace("qam", "").strip()
-            return f"qam_{num}" if num else "qam"
-        return modulation
+            num = mod.replace("qam", "")
+            return f"{num}QAM" if num else "QAM"
+    
+        return modulation.upper()

@@ -352,18 +352,6 @@ class TC4400Driver(ModemDriver):
         """Normalize modulation string to analyzer format.
 
         Input: "256QAM", "OFDM", "ATDMA", "OFDMA"
-        Output: "qam_256", "ofdm", "atdma", "ofdma"
+        Output: "256QAM", "OFDM", "ATDMA", "OFDMA"
         """
-        if not modulation:
-            return ""
-        mod = modulation.upper().replace("-", "")
-        if "OFDMA" in mod:
-            return "ofdma"
-        if "OFDM" in mod:
-            return "ofdm"
-        if "ATDMA" in mod:
-            return "atdma"
-        if "QAM" in mod:
-            num = mod.replace("QAM", "").strip()
-            return f"qam_{num}" if num else "qam"
-        return modulation.lower()
+        return modulation.strip() if modulation else ""
