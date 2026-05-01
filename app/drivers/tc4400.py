@@ -18,6 +18,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from .base import ModemDriver
+from .utils import normalize_modulation
 from ..types import DocsisData, DeviceInfo, ConnectionInfo, RawChannel
 
 log = logging.getLogger("docsis.driver.tc4400")
@@ -147,11 +148,11 @@ class TC4400Driver(ModemDriver):
                 )
                 
                 # For OFDM channels, channel_type gives us OFDM vs SC-QAM
-                # For SC-QAM, modulation gives us qam_256 etc.
+                # For SC-QAM, modulation gives us "256QAM" etc.
                 if channel_type.upper() in ("OFDM",):
-                    final_type = "ofdm"
+                    final_type = "OFDM"
                 elif channel_type.upper() in ("SC-QAM",):
-                    final_type = modulation if modulation else "qam"
+                    final_type = modulation if modulation else "QAM"
                 else:
                     final_type = modulation if modulation else "unknown"
                 
@@ -165,7 +166,7 @@ class TC4400Driver(ModemDriver):
                     self._parse_number(self._cell(cells, col["uncorrected"]))
                 )
 
-                is_ofdm = final_type == "ofdm"
+                is_ofdm = final_type == "OFDM"
 
                 result.append({
                     "channelID": channel_id,
@@ -351,7 +352,7 @@ class TC4400Driver(ModemDriver):
     def _normalize_modulation(modulation: str) -> str:
         """Normalize modulation string to analyzer format.
 
-        Input: "256QAM", "OFDM", "ATDMA", "OFDMA"
-        Output: "256QAM", "OFDM", "ATDMA", "OFDMA"
+        Input: "256QAM", "256-qam", "qam_256", "OFDM", "ATDMA", "OFDMA"
+        Output: "256QAM", "256QAM", "256QAM", "OFDM", "ATDMA", "OFDMA"
         """
-        return modulation.strip() if modulation else ""
+        return normalize_modulation(modulation)

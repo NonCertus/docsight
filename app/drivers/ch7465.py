@@ -17,6 +17,7 @@ import re
 import weakref
 from enum import Enum
 from .base import ModemDriver
+from .utils import normalize_modulation
 from ..types import DocsisData, DeviceInfo, ConnectionInfo
 
 log = logging.getLogger("docsis.driver.ch7465")
@@ -313,15 +314,4 @@ class CH7465Driver(ModemDriver):
         Input: "256qam", "64qam", "qpsk", ..
         Output: "256QAM", "64QAM", "QPSK", ..
         """
-        if not modulation:
-            return ""
-        mod = modulation.lower().replace("-", "").replace(" ", "").strip()        
-    
-        if "qpsk" in mod:
-            return "QPSK"
-    
-        if "qam" in mod:
-            num = mod.replace("qam", "")
-            return f"{num}QAM" if num else "QAM"
-    
-        return modulation.upper()
+        return normalize_modulation(modulation)
