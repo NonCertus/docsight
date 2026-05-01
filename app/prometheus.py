@@ -295,7 +295,7 @@ def format_metrics(
         if wan_ipv4 not in (None, ""):
             _metric(
                 lines,
-                "WAN IPv4",
+                "WAN IPv4 address",
                 "gauge",
                 "docsight_device_wan_ipv4",
                 1,
@@ -306,7 +306,7 @@ def format_metrics(
         if wan_ipv6 not in (None, ""):
             _metric(
                 lines,
-                "WAN IPv6",
+                "WAN IPv6 address",
                 "gauge",
                 "docsight_device_wan_ipv6",
                 1,
