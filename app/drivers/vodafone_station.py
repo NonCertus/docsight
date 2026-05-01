@@ -926,7 +926,7 @@ class VodafoneStationDriver(ModemDriver):
             return "ofdma"
         if "OFDM" in mod:
             return "ofdm"
-        if "QAM" in mod:
-            num = mod.replace("QAM", "")
-            return f"qam_{num}" if num else "qam"
+        if "QAM" in mod.upper():
+            num = "".join(c for c in mod if c.isdigit())
+            return f"{num}QAM" if num else ""
         return modulation.lower()
